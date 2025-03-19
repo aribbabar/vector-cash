@@ -1,0 +1,43 @@
+<div class="dialog-content">
+  <h2 mat-dialog-title>Add Entries</h2>
+  <form [formGroup]="entryForm">
+    <div mat-dialog-content>
+      <!-- Date Picker (applies to all accounts) -->
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          formControlName="date"
+          required
+        />
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="picker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <!-- Dynamic Input Fields for Each Account -->
+      <div formArrayName="accountBalances">
+        <div
+          *ngFor="let balanceControl of accountBalances.controls; let i = index"
+          [formGroupName]="i"
+        >
+          <input type="number" hidden formControlName="accountId" />
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>{{ data.accounts[i].name }} Balance</mat-label>
+            <input matInput type="number" formControlName="balance" />
+            <span matTextPrefix>$&nbsp;</span>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div mat-dialog-actions align="end">
+      <button mat-button (click)="close()">Cancel</button>
+      <button mat-raised-button color="primary" (click)="saveEntries()">
+        Save
+      </button>
+    </div>
+  </form>
+</div>

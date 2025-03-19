@@ -1,0 +1,21 @@
+/* Container styling */
+.dialog-content {
+  padding: 20px;
+}
+
+/* Mat-form-field styling */
+mat-form-field {
+  width: 100%;
+}
+
+/* Dialog actions styling */
+mat-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Button styling */
+button {
+  min-width: 80px;
+}

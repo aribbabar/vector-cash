@@ -1,0 +1,43 @@
+<div class="dashboard-container">
+  <mat-card class="summary-card">
+    <mat-card-title>Net Worth</mat-card-title>
+    <mat-card-content>
+      <h2>$50,000</h2>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="summary-card">
+    <mat-card-title>Total Investments</mat-card-title>
+    <mat-card-content>
+      <h2>$20,000</h2>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="summary-card">
+    <mat-card-title>Total Cash</mat-card-title>
+    <mat-card-content>
+      <h2>$15,000</h2>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="summary-card">
+    <mat-card-title>Total Debt</mat-card-title>
+    <mat-card-content>
+      <h2>$5,000</h2>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<button mat-fab color="accent" class="fab-button" (click)="openEntryDialog()">
+  <mat-icon>add</mat-icon>
+</button>
+
+<div class="chart-container">
+  <h2>Financial Trends</h2>
+  <div id="financial-chart"></div>
+</div>
+
+<div class="recent-entries-container">
+  <h2>Recent Entries</h2>
+  <app-entries-table></app-entries-table>
+</div>
