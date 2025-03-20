@@ -14,6 +14,16 @@ export class AccountService {
     return await db.accounts.toArray();
   }
 
+  async getAccount(id: number): Promise<Account> {
+    const account = await db.accounts.get(id);
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    return account;
+  }
+
   async deleteAccount(id: number) {
     return await db.accounts.delete(id);
   }

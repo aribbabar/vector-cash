@@ -1,43 +1,45 @@
-<div class="dashboard-container">
-  <mat-card class="summary-card">
-    <mat-card-title>Net Worth</mat-card-title>
-    <mat-card-content>
-      <h2>$50,000</h2>
-    </mat-card-content>
-  </mat-card>
+<div class="container">
+  <div class="cards-container">
+    <mat-card class="summary-card">
+      <mat-card-title>Assets</mat-card-title>
+      <mat-card-content>
+        <h2>{{ assetsTotal | currency }}</h2>
+      </mat-card-content>
+    </mat-card>
 
-  <mat-card class="summary-card">
-    <mat-card-title>Total Investments</mat-card-title>
-    <mat-card-content>
-      <h2>$20,000</h2>
-    </mat-card-content>
-  </mat-card>
+    <mat-card class="summary-card">
+      <mat-card-title>Liabilities</mat-card-title>
+      <mat-card-content>
+        <h2>{{ liabilitiesTotal | currency }}</h2>
+      </mat-card-content>
+    </mat-card>
 
-  <mat-card class="summary-card">
-    <mat-card-title>Total Cash</mat-card-title>
-    <mat-card-content>
-      <h2>$15,000</h2>
-    </mat-card-content>
-  </mat-card>
+    <mat-card class="summary-card">
+      <mat-card-title>Net Worth</mat-card-title>
+      <mat-card-content>
+        <h2>{{ netWorth | currency }}</h2>
+      </mat-card-content>
+    </mat-card>
+  </div>
 
-  <mat-card class="summary-card">
-    <mat-card-title>Total Debt</mat-card-title>
-    <mat-card-content>
-      <h2>$5,000</h2>
-    </mat-card-content>
-  </mat-card>
+  <app-chart></app-chart>
+
+  <app-entries></app-entries>
 </div>
 
-<button mat-fab color="accent" class="fab-button" (click)="openEntryDialog()">
+<!-- Add menu with mini FAB buttons -->
+<div class="fab-menu" *ngIf="showFabOptions">
+  <button mat-fab extended="" color="accent" (click)="openEntryDialog()">
+    <mat-icon>note_add</mat-icon>
+    Add Entry
+  </button>
+  <button mat-fab extended="" color="accent" (click)="openAccountDialog()">
+    <mat-icon>account_circle</mat-icon>
+    Add Account
+  </button>
+</div>
+
+<!-- Main FAB button toggles the menu -->
+<button mat-fab color="accent" class="fab-button" (click)="toggleFabOptions()">
   <mat-icon>add</mat-icon>
 </button>
-
-<div class="chart-container">
-  <h2>Financial Trends</h2>
-  <div id="financial-chart"></div>
-</div>
-
-<div class="recent-entries-container">
-  <h2>Recent Entries</h2>
-  <app-entries-table></app-entries-table>
-</div>

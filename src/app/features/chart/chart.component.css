@@ -1,0 +1,77 @@
+.chart-container {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-container > div {
+  width: 100%;
+  height: 300px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.date-range-selector {
+  display: flex;
+  gap: 0.25rem;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Material style button group */
+.date-range-selector button {
+  background-color: #fafafa;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: relative;
+  min-width: 40px;
+  text-align: center;
+  outline: none;
+  color: rgba(0, 0, 0, 0.87);
+  letter-spacing: 0.02em;
+}
+
+.date-range-selector button:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.date-range-selector button.active {
+  background-color: #673ab7; /* Material primary purple */
+  color: white;
+}
+
+/* Add Material-style ripple effect on hover */
+.date-range-selector button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.date-range-selector button:hover::after {
+  opacity: 1;
+}
+
+/* Material style error message */
+.chart-error {
+  text-align: center;
+  padding-top: 100px;
+  color: #f44336; /* Material error red */
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: 16px;
+}

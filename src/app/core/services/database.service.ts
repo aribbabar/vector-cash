@@ -1,8 +1,8 @@
 import Dexie, { Table } from 'dexie';
-import { AccountType } from '../enums/account-type.enum';
-import { AccountCategory } from '../models/account-category.model';
+import { AccountCategory } from '../enums/account-category.enum';
 import { Account } from '../models/account.model';
 import { Entry } from '../models/entry.model';
+import { seedData } from './seed-data';
 
 export class VectorCashDatabase extends Dexie {
   accounts!: Table<Account, number>;
@@ -12,51 +12,79 @@ export class VectorCashDatabase extends Dexie {
   constructor() {
     super('VectorCashDB');
     this.version(1).stores({
-      accounts: '++id, name, type, accountCategoryId',
-      accountCategories: '++id, name',
+      accounts: '++id, name, category',
       entries: '++id, date, accountId, balance'
     });
+
+    // Map tables to classes
+    this.accounts.mapToClass(Account);
+    this.entries.mapToClass(Entry);
 
     this.seedDatabase();
   }
 
   async seedDatabase() {
-    const categoryCount = await this.accountCategories.count();
-    if (categoryCount === 0) {
-      console.log('Seeding database...');
+    // Only seed if the database is empty
+    const accountCount = await this.accounts.count();
 
-      const categories = await this.accountCategories.bulkAdd([
-        { name: 'Checking Account' },
-        { name: 'Savings Account' },
-        { name: 'Credit Card' }
-      ]);
+    if (accountCount === 0) {
+      console.log('Seeding accounts with initial data...');
 
-      const accounts = await this.accounts.bulkAdd([
-        { name: 'Chase Checking', type: AccountType.ASSET, categoryId: 1 },
-        { name: 'Capital One Savings', type: AccountType.ASSET, categoryId: 2 },
-        {
-          name: 'Discover Credit Card',
-          type: AccountType.LIABILITY,
-          categoryId: 3
-        }
-      ]);
+      // Seed accounts
+      await this.seedAccounts();
 
-      const entries = await this.entries.bulkAdd([
-        { date: new Date('2024-03-19'), accountId: 1, balance: 1500 },
-        { date: new Date('2024-03-19'), accountId: 2, balance: 5000 },
-        { date: new Date('2024-03-19'), accountId: 3, balance: -1200 },
-        { date: new Date('2024-03-20'), accountId: 1, balance: 1600 },
-        { date: new Date('2024-03-20'), accountId: 2, balance: 5100 },
-        { date: new Date('2024-03-20'), accountId: 3, balance: -1300 },
-        { date: new Date('2024-03-21'), accountId: 1, balance: 1700 },
-        { date: new Date('2024-03-21'), accountId: 2, balance: 5200 },
-        { date: new Date('2024-03-21'), accountId: 3, balance: -1400 },
-        { date: new Date('2024-03-22'), accountId: 1, balance: 1800 },
-        { date: new Date('2024-03-22'), accountId: 2, balance: 5300 },
-        { date: new Date('2024-03-22'), accountId: 3, balance: -1500 }
-      ]);
+      // Seed entries
+      await this.seedEntries();
 
-      console.log('Database seeding complete!');
+      console.log('Accounts seeding completed.');
+    }
+
+    const entriesCount = await this.entries.count();
+
+    if (entriesCount === 0) {
+      console.log('Seeding entries with initial data...');
+
+      // Seed accounts
+      await this.seedAccounts();
+
+      // Seed entries
+      await this.seedEntries();
+
+      console.log('Entries seeding completed.');
+    }
+  }
+
+  private async seedAccounts() {
+    const sampleAccounts: Account[] = [
+      {
+        type: 'Checking Account',
+        category: AccountCategory.ASSET,
+        institutionName: 'Chase Bank'
+      },
+      {
+        type: 'Savings Account',
+        category: AccountCategory.ASSET,
+        institutionName: 'Ally Bank'
+      },
+      {
+        type: 'Credit Card',
+        category: AccountCategory.LIABILITY,
+        institutionName: 'American Express'
+      }
+    ];
+
+    // Insert all accounts and collect their IDs
+    for (const account of sampleAccounts) {
+      await this.accounts.add(account);
+    }
+  }
+
+  private async seedEntries() {
+    const sampleEntries: Entry[] = seedData;
+
+    // Insert all entries
+    for (const entry of sampleEntries) {
+      await this.entries.add(entry);
     }
   }
 }

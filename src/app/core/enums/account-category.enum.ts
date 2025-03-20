@@ -1,4 +1,4 @@
-export enum AccountType {
+export enum AccountCategory {
   ASSET = 'Asset',
   LIABILITY = 'Liability'
 }

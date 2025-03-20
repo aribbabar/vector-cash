@@ -1,60 +1,75 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { Account } from '../../core/models/account.model';
-import { AccountService } from '../../core/services/account.service';
-import { EntriesTableComponent } from '../entries-table/entries-table.component';
+import { FormattedDataService } from '../../core/services/formatted-data.service';
+import { AccountDialogComponent } from '../account-dialog/account-dialog.component';
+import { ChartComponent } from '../chart/chart.component';
+import { EntriesComponent } from '../entries/entries.component';
 import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     MatButtonModule,
-    MatToolbarModule,
     MatCardModule,
-    MatListModule,
     MatIconModule,
     MatDialogModule,
     CommonModule,
     MatIconModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatFormFieldModule,
-    EntriesTableComponent
+    EntriesComponent,
+    ChartComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent {
-  accounts: Account[] = [];
+export class DashboardComponent implements OnInit {
+  assetsTotal = 0;
+  liabilitiesTotal = 0;
+  netWorth = 0;
+  showFabOptions = false;
 
   constructor(
     private dialog: MatDialog,
-    private accountService: AccountService
+    private formattedDataService: FormattedDataService
   ) {}
 
-  async ngOnInit() {
-    this.accounts = await this.accountService.getAccounts();
+  async ngOnInit(): Promise<void> {
+    const { assets, liabilities, netWorth } =
+      await this.formattedDataService.getCurrentNetWorth();
+    this.assetsTotal = assets;
+    this.liabilitiesTotal = liabilities;
+    this.netWorth = netWorth;
+  }
+
+  toggleFabOptions() {
+    this.showFabOptions = !this.showFabOptions;
   }
 
   openEntryDialog() {
     const dialogRef = this.dialog.open(EntryDialogComponent, {
-      width: '400px',
-      data: { accounts: this.accounts } // Pass accounts to dialog
+      width: '400px'
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         console.log('New entry added!');
         // Refresh data if needed
+      }
+    });
+  }
+
+  openAccountDialog() {
+    const dialogRef = this.dialog.open(AccountDialogComponent, {
+      width: '400px'
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        console.log('New account added!');
+        // Refresh accounts list
       }
     });
   }
