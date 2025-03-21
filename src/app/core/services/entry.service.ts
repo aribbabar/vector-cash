@@ -18,6 +18,10 @@ export class EntryService {
     return await db.entries.count();
   }
 
+  async entryExists(date: Date): Promise<boolean> {
+    return (await db.entries.where('date').equals(date).count()) > 0;
+  }
+
   async deleteEntry(id: number) {
     return await db.entries.delete(id);
   }

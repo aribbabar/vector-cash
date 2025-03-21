@@ -5,10 +5,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { FormattedDataService } from '../../core/services/formatted-data.service';
-import { AccountDialogComponent } from '../account-dialog/account-dialog.component';
 import { ChartComponent } from '../chart/chart.component';
 import { EntriesComponent } from '../entries/entries.component';
-import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -46,31 +44,5 @@ export class DashboardComponent implements OnInit {
 
   toggleFabOptions() {
     this.showFabOptions = !this.showFabOptions;
-  }
-
-  openEntryDialog() {
-    const dialogRef = this.dialog.open(EntryDialogComponent, {
-      width: '400px'
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        console.log('New entry added!');
-        // Refresh data if needed
-      }
-    });
-  }
-
-  openAccountDialog() {
-    const dialogRef = this.dialog.open(AccountDialogComponent, {
-      width: '400px'
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        console.log('New account added!');
-        // Refresh accounts list
-      }
-    });
   }
 }

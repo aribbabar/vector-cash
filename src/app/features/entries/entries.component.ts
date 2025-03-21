@@ -11,7 +11,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { FormattedDataService } from '../../core/services/formatted-data.service';
 
 interface TableEntry {
-  date: Date;
+  date: string;
   [accountName: string]: any;
 }
 

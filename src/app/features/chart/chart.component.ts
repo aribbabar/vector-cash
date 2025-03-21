@@ -7,7 +7,10 @@ import {
   ViewChild
 } from '@angular/core';
 import * as d3 from 'd3';
-import { FormattedDataService } from '../../core/services/formatted-data.service';
+import {
+  FormattedDataService,
+  FormattedNetWorth
+} from '../../core/services/formatted-data.service';
 
 @Component({
   selector: 'app-chart',
@@ -19,19 +22,8 @@ import { FormattedDataService } from '../../core/services/formatted-data.service
 export class ChartComponent implements OnInit {
   @ViewChild('chart', { static: true }) private chartContainer!: ElementRef;
 
-  private data: {
-    date: Date;
-    assets: number;
-    liabilities: number;
-    netWorth: number;
-  }[] = [];
-
-  private filteredData: {
-    date: Date;
-    assets: number;
-    liabilities: number;
-    netWorth: number;
-  }[] = [];
+  private data: FormattedNetWorth[] = [];
+  private filteredData: FormattedNetWorth[] = [];
 
   private svg: any;
   private margin = { top: 20, right: 50, bottom: 30, left: 50 };
@@ -57,7 +49,9 @@ export class ChartComponent implements OnInit {
     this.data = await this.formattedDataService.getNetWorthOverTime();
 
     // Sort the data by date to ensure proper ordering
-    this.data = this.data.sort((a, b) => a.date.getTime() - b.date.getTime());
+    this.data = this.data.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
     // Check if data has recent entries
     this.checkDataRecency();
@@ -74,7 +68,7 @@ export class ChartComponent implements OnInit {
 
     // Find the most recent date in the data
     const mostRecentDate = new Date(
-      Math.max(...this.data.map((item) => item.date.getTime()))
+      Math.max(...this.data.map((item) => new Date(item.date).getTime()))
     );
 
     // Calculate how many days ago the most recent data is
@@ -89,7 +83,7 @@ export class ChartComponent implements OnInit {
 
     // Check if the first date is too far in the past
     const oldestDate = new Date(
-      Math.min(...this.data.map((item) => item.date.getTime()))
+      Math.min(...this.data.map((item) => new Date(item.date).getTime()))
     );
     console.log(`Oldest data entry is from ${oldestDate.toLocaleDateString()}`);
   }
@@ -117,6 +111,13 @@ export class ChartComponent implements OnInit {
     } else {
       console.error('No data available for selected range');
       // Display a message to the user that there's no data for this range
+      d3.select(this.chartContainer.nativeElement)
+        .append('div')
+        .attr('class', 'chart-error')
+        .style('text-align', 'center')
+        .style('padding-top', '100px')
+        .style('color', '#dc3545')
+        .text('No data available for the selected time period');
     }
   }
 
@@ -155,7 +156,9 @@ export class ChartComponent implements OnInit {
     }
 
     // Filter data to include only entries after the start date
-    this.filteredData = this.data.filter((item) => item.date >= startDate);
+    this.filteredData = this.data.filter(
+      (item) => new Date(item.date) >= startDate
+    );
 
     // If filtered data is empty, revert to "all" data
     if (this.filteredData.length === 0) {
@@ -199,31 +202,30 @@ export class ChartComponent implements OnInit {
 
     const element = this.chartContainer.nativeElement;
 
-    // Get the actual width of the container
     const containerWidth = element.clientWidth;
     this.width = containerWidth - this.margin.left - this.margin.right;
-    this.height = 300 - this.margin.top - this.margin.bottom;
+    this.height = 450 - this.margin.top - this.margin.bottom - 40;
 
     this.svg = d3
       .select(element)
       .append('svg')
       .attr('width', '100%')
-      .attr('height', this.height + this.margin.top + this.margin.bottom)
+      .attr('height', this.height + this.margin.top + this.margin.bottom + 40) // Add 40px for legend
       .append('g')
       .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
 
-    // Define scales
     // Define scales for chart
-    const x = d3
-      .scaleTime()
-      .domain(d3.extent(this.filteredData, (d) => d.date) as [Date, Date])
-      .range([0, this.width]);
+    const dateExtent = d3.extent(
+      this.filteredData,
+      (d) => new Date(d.date)
+    ) as [Date, Date];
 
-    // Find min/max values for y scale, accounting for possible negative values in both net worth and liabilities
+    const x = d3.scaleTime().domain(dateExtent).range([0, this.width]);
+
+    // Find min/max values for y scale
     const maxValue =
-      d3.max(this.filteredData, (d) =>
-        Math.max(d.assets, Math.abs(d.liabilities), d.netWorth)
-      ) || 0;
+      d3.max(this.filteredData, (d) => Math.max(d.assets, d.netWorth, 0)) || 0;
+
     const minValue =
       d3.min(this.filteredData, (d) =>
         Math.min(0, d.netWorth, d.liabilities)
@@ -238,24 +240,24 @@ export class ChartComponent implements OnInit {
 
     // Create line generators for each metric
     const assetLine = d3
-      .line<any>()
-      .x((d) => x(d.date))
+      .line<FormattedNetWorth>()
+      .x((d) => x(new Date(d.date)))
       .y((d) => y(d.assets));
 
     const liabilityLine = d3
-      .line<any>()
-      .x((d) => x(d.date))
-      .y((d) => y(d.liabilities)); // Use actual liability value (can be negative)
+      .line<FormattedNetWorth>()
+      .x((d) => x(new Date(d.date)))
+      .y((d) => y(d.liabilities));
 
     const netWorthLine = d3
-      .line<any>()
-      .x((d) => x(d.date))
+      .line<FormattedNetWorth>()
+      .x((d) => x(new Date(d.date)))
       .y((d) => y(d.netWorth));
 
     // Add X Axis
     this.svg
       .append('g')
-      .attr('transform', `translate(0,${y(0)})`) // Position at y=0 instead of bottom
+      .attr('transform', `translate(0,${y(0)})`) // Position at y=0
       .call(d3.axisBottom(x));
 
     // Add Y Axis
@@ -301,60 +303,51 @@ export class ChartComponent implements OnInit {
       .attr('stroke-width', 2.5) // Slightly thicker
       .attr('d', netWorthLine);
 
-    // Add legend
-    const legend = this.svg
+    // Create legend container below the chart instead of in the corner
+    const legendContainer = d3
+      .select(element)
+      .select('svg')
       .append('g')
-      .attr('transform', `translate(${this.width - 100}, 0)`);
+      .attr('class', 'legend')
+      .attr(
+        'transform',
+        `translate(${this.width / 2 - 100},${
+          this.height + this.margin.top + 10
+        })`
+      );
 
-    // Assets legend
-    legend
-      .append('line')
-      .attr('x1', 0)
-      .attr('y1', 10)
-      .attr('x2', 20)
-      .attr('y2', 10)
-      .style('stroke', '#28a745')
-      .style('stroke-width', 2);
+    // Add legend items in a horizontal layout
+    const legendItems = [
+      { color: '#28a745', label: 'Assets' },
+      { color: '#dc3545', label: 'Liabilities' },
+      { color: '#007bff', label: 'Net Worth' }
+    ];
 
-    legend
-      .append('text')
-      .attr('x', 25)
-      .attr('y', 15)
-      .text('Assets')
-      .style('font-size', '12px');
+    const legendSpacing = 100; // Space between legend items
 
-    // Liabilities legend
-    legend
-      .append('line')
-      .attr('x1', 0)
-      .attr('y1', 30)
-      .attr('x2', 20)
-      .attr('y2', 30)
-      .style('stroke', '#dc3545')
-      .style('stroke-width', 2);
+    legendItems.forEach((item, index) => {
+      const legendItem = legendContainer
+        .append('g')
+        .attr('transform', `translate(${index * legendSpacing}, 0)`);
 
-    legend
-      .append('text')
-      .attr('x', 25)
-      .attr('y', 35)
-      .text('Liabilities')
-      .style('font-size', '12px');
+      // Add colored line
+      legendItem
+        .append('line')
+        .attr('x1', 0)
+        .attr('y1', 10)
+        .attr('x2', 20)
+        .attr('y2', 10)
+        .style('stroke', item.color)
+        .style('stroke-width', item.label === 'Net Worth' ? 2.5 : 2);
 
-    // Net Worth legend
-    legend
-      .append('line')
-      .attr('x1', 0)
-      .attr('y1', 50)
-      .attr('x2', 20)
-      .attr('y2', 50)
-      .style('stroke', '#007bff')
-      .style('stroke-width', 2.5);
-
-    legend
-      .append('text')
-      .attr('x', 25)
-      .attr('y', 55)
-      .text('Net Worth')
-      .style('font-size', '12px');
+      // Add text label
+      legendItem
+        .append('text')
+        .attr('x', 25)
+        .attr('y', 15)
+        .text(item.label)
+        .style('font-size', '12px')
+        .style('font-family', 'Roboto, "Helvetica Neue", sans-serif');
+    });
   }
 }

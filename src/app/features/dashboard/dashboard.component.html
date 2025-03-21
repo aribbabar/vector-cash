@@ -26,20 +26,3 @@
 
   <app-entries></app-entries>
 </div>
-
-<!-- Add menu with mini FAB buttons -->
-<div class="fab-menu" *ngIf="showFabOptions">
-  <button mat-fab extended="" color="accent" (click)="openEntryDialog()">
-    <mat-icon>note_add</mat-icon>
-    Add Entry
-  </button>
-  <button mat-fab extended="" color="accent" (click)="openAccountDialog()">
-    <mat-icon>account_circle</mat-icon>
-    Add Account
-  </button>
-</div>
-
-<!-- Main FAB button toggles the menu -->
-<button mat-fab color="accent" class="fab-button" (click)="toggleFabOptions()">
-  <mat-icon>add</mat-icon>
-</button>

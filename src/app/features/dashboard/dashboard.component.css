@@ -99,29 +99,6 @@ app-entries {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.fab-button {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 1000;
-  transition: transform 0.2s;
-}
-
-.fab-button:hover {
-  transform: scale(1.1);
-}
-
-/* New styles for the FAB menu */
-.fab-menu {
-  position: fixed;
-  right: 24px;
-  bottom: 100px; /* Adjusted to appear above the main FAB */
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 1000;
-}
-
 @media (max-width: 768px) {
   .container {
     padding: 16px;

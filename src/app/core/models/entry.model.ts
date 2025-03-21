@@ -1,6 +1,7 @@
 export class Entry {
   id?: number;
-  date!: Date;
+  // MM/DD/YYYY
+  date!: string;
   accountId!: number;
   balance!: number;
 }

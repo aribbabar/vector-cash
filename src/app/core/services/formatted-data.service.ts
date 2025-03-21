@@ -4,8 +4,15 @@ import { AccountService } from './account.service';
 import { EntryService } from './entry.service';
 
 export interface FormattedEntry {
-  date: Date;
+  date: string;
   accounts: { accountId: number; account: string; balance: number }[];
+}
+
+export interface FormattedNetWorth {
+  date: string;
+  assets: number;
+  liabilities: number;
+  netWorth: number;
 }
 
 @Injectable({
@@ -28,9 +35,7 @@ export class FormattedDataService {
       const account = await this.accountService.getAccount(accountId);
       const balance = entry.balance;
 
-      const existingEntry = result.find(
-        (e) => e.date.toDateString() === date.toDateString()
-      );
+      const existingEntry = result.find((e) => e.date === date);
 
       if (existingEntry) {
         const existingAccount = existingEntry.accounts.find(
@@ -99,21 +104,9 @@ export class FormattedDataService {
   }
 
   // Returns the total assets, liabilities, and net worth for each unique date.
-  async getNetWorthOverTime(): Promise<
-    {
-      date: Date;
-      assets: number;
-      liabilities: number;
-      netWorth: number;
-    }[]
-  > {
+  async getNetWorthOverTime(): Promise<FormattedNetWorth[]> {
     const entries = await this.getEntriesByDate();
-    const result: {
-      date: Date;
-      assets: number;
-      liabilities: number;
-      netWorth: number;
-    }[] = [];
+    const result: FormattedNetWorth[] = [];
 
     for (const entry of entries) {
       const assets = await entry.accounts.reduce(
