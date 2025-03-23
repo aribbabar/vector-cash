@@ -1,1 +1,81 @@
-<p>accounts works!</p>
+<div class="accounts-container">
+  <h2>Accounts Overview</h2>
+
+  <!-- Assets Section -->
+  <div class="account-section asset-section">
+    <h3>Assets</h3>
+    <div class="total-amount">
+      <span>Total: {{ getAssetTotal() | currency }}</span>
+    </div>
+
+    <div *ngFor="let category of getAssetCategories()" class="category-group">
+      <h4>{{ category.name }}</h4>
+      <div class="accounts-list">
+        <div
+          *ngFor="let account of getAccountsByCategory(category.id, 'Asset')"
+          class="account-card"
+        >
+          <div class="account-details">
+            <div class="account-name">{{ account.name }}</div>
+            <div class="account-balance">{{ account.balance | currency }}</div>
+          </div>
+          <div class="account-actions">
+            <button class="btn-edit" (click)="openUpdateDialog(account)">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn-delete" (click)="openDeleteDialog(account)">
+              <i class="fas fa-trash-alt"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liabilities Section -->
+  <div class="account-section liability-section">
+    <h3>Liabilities</h3>
+    <div class="total-amount">
+      <span>Total: {{ getLiabilityTotal() | currency }}</span>
+    </div>
+
+    <div
+      *ngFor="let category of getLiabilityCategories()"
+      class="category-group"
+    >
+      <h4>{{ category.name }}</h4>
+      <div class="accounts-list">
+        <div
+          *ngFor="
+            let account of getAccountsByCategory(category.id, 'Liability')
+          "
+          class="account-card"
+        >
+          <div class="account-details">
+            <div class="account-name">{{ account.name }}</div>
+            <div class="account-balance">{{ account.balance | currency }}</div>
+          </div>
+          <div class="account-actions">
+            <button class="btn-edit" (click)="openUpdateDialog(account)">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn-delete" (click)="openDeleteDialog(account)">
+              <i class="fas fa-trash-alt"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Net Worth Section -->
+  <div class="net-worth-section">
+    <h3>Net Worth</h3>
+    <div
+      class="net-worth-amount"
+      [ngClass]="{ positive: getNetWorth() >= 0, negative: getNetWorth() < 0 }"
+    >
+      {{ getNetWorth() | currency }}
+    </div>
+  </div>
+</div>

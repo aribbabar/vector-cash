@@ -3,6 +3,7 @@ export class Account {
   name!: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
   type!: 'Asset' | 'Liability';
   categoryId!: number; // FK to AccountCategory
+  isActive: boolean = true;
 
   toString(): string {
     return this.name;

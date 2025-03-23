@@ -24,7 +24,7 @@ export class FormattedDataService {
     private accountService: AccountService
   ) {}
 
-  // Returns an array of accounts for each unique date
+  // Returns an array of accounts that are active for each unique date
   async getFormattedEntries(): Promise<FormattedEntry[]> {
     const formattedEntries: FormattedEntry[] = [];
     const entries = await this.entryService.getEntries();
@@ -40,21 +40,29 @@ export class FormattedDataService {
         .map((entry) => {
           const account = accounts.find(
             (account) => account.id === entry.accountId
-          ) as FormattedAccount;
+          );
 
           if (!account) {
-            throw new Error('Account not found');
+            console.error(
+              `Account not found for entry with accountId: ${entry.accountId}`
+            );
+            return null;
           }
 
+          // Create a properly formatted account with balance
           return {
-            ...account,
+            id: account.id!,
+            name: account.name,
+            type: account.type,
+            categoryId: account.categoryId,
             balance: entry.balance
-          };
-        });
+          } as FormattedAccount;
+        })
+        .filter((account): account is FormattedAccount => account !== null); // Remove null accounts
 
       formattedEntries.push({
         date,
-        accounts: accountsForDate // Updated to match the interface property name
+        accounts: accountsForDate
       });
     });
 
@@ -67,5 +75,60 @@ export class FormattedDataService {
    */
   async deleteFormattedEntries(date: string): Promise<void> {
     await this.entryService.deleteEntries(date);
+  }
+
+  /**
+   *
+   * @returns An array of formatted active accounts with their balances
+   */
+  async getFormattedAccounts(): Promise<FormattedAccount[]> {
+    const accounts = await this.accountService.getAccounts();
+
+    // Filter out inactive accounts first
+    const activeAccounts = accounts.filter((account) => account.isActive);
+
+    // Create an array of promises for each active account's balance
+    const accountPromises = activeAccounts.map(async (account) => {
+      const balance = await this.entryService.getAccountBalance(account.id!);
+
+      return {
+        id: account.id!,
+        name: account.name,
+        type: account.type,
+        categoryId: account.categoryId,
+        balance: balance
+      } as FormattedAccount;
+    });
+
+    // Wait for all balance promises to resolve
+    return Promise.all(accountPromises);
+  }
+
+  /**
+   * Sets the isActive property of an account to false
+   * @param account Formatted account to delete
+   */
+  async deleteFormattedAccount(account: FormattedAccount): Promise<void> {
+    try {
+      // Get the original account first (to preserve all properties)
+      const originalAccount = await this.accountService.getAccount(account.id);
+
+      if (!originalAccount) {
+        throw new Error(`Account with ID ${account.id} not found`);
+      }
+
+      // Set isActive to false (soft delete)
+      originalAccount.isActive = false;
+
+      // Update the account in the database
+      await this.accountService.updateAccount(originalAccount);
+
+      // Optionally, you could also handle related entries here if needed
+      // For example, you might want to mark entries related to this account
+      // or perform other cleanup operations
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error; // Re-throw the error so calling components can handle it
+    }
   }
 }

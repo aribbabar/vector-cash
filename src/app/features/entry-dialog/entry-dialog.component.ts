@@ -94,7 +94,7 @@ export class EntryDialogComponent implements OnInit {
   async ngOnInit() {
     try {
       // First get all accounts regardless of create or update mode
-      this.accountsList = await this.accountService.getAccounts();
+      this.accountsList = await this.accountService.getActiveAccounts();
 
       if (this.data && this.data.entry) {
         // Update logic - populate form with existing data

@@ -15,15 +15,6 @@ export class EntryService {
     await db.entries.add(entry);
   }
 
-  async updateEntry(entry: Entry) {
-    if (!entry.id) {
-      throw new Error('Cannot update an entry without an ID');
-    }
-
-    await db.entries.update(entry.id, entry);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
-  }
-
   async getEntries(): Promise<Entry[]> {
     return await db.entries.toArray();
   }
@@ -50,12 +41,37 @@ export class EntryService {
   }
 
   /**
+   * Returns the account balance for the entry on the latest date
+   * @param accountId
+   * @returns
+   */
+  async getAccountBalance(accountId: number): Promise<number> {
+    const entries = await this.getEntries();
+    const latestEntry = entries
+      .filter((entry) => entry.accountId === accountId)
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )[0];
+
+    return latestEntry ? latestEntry.balance : 0;
+  }
+
+  /**
    *
    * @param date MM/DD/YYYY
    * @returns
    */
   async entryExists(date: string): Promise<boolean> {
     return (await db.entries.where('date').equals(date).count()) > 0;
+  }
+
+  async updateEntry(entry: Entry) {
+    if (!entry.id) {
+      throw new Error('Cannot update an entry without an ID');
+    }
+
+    await db.entries.update(entry.id, entry);
+    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
   }
 
   async deleteEntry(id: number) {

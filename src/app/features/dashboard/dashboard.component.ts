@@ -22,6 +22,7 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
     CommonModule,
     EntriesComponent,
     AccountsComponent,
+    AccountCategoriesComponent,
     AccountCategoriesComponent
   ],
   templateUrl: './dashboard.component.html',

@@ -5,31 +5,61 @@ import { Entry } from '../models/entry.model';
 export class SeedDataGenerator {
   static generateAccountCategories(): AccountCategory[] {
     return [
-      { name: 'Checking' },
-      { name: 'Savings' },
-      { name: 'Credit Card' },
-      { name: 'Investment' },
-      { name: 'Retirement' },
-      { name: 'Loan' },
-      { name: 'Cash' }
+      { name: 'Checking', isActive: true },
+      { name: 'Savings', isActive: true },
+      { name: 'Credit Card', isActive: true },
+      { name: 'Investment', isActive: true },
+      { name: 'Retirement', isActive: true },
+      { name: 'Loan', isActive: true },
+      { name: 'Cash', isActive: true }
     ];
   }
 
   static generateAccounts(): Account[] {
     return [
-      { name: 'Chase Checking', type: 'Asset', categoryId: 1 },
-      { name: 'Bank of America Checking', type: 'Asset', categoryId: 1 },
-      { name: 'Capital One Savings', type: 'Asset', categoryId: 2 },
-      { name: 'Ally High-Yield Savings', type: 'Asset', categoryId: 2 },
-      { name: 'Discover it', type: 'Liability', categoryId: 3 },
-      { name: 'Chase Sapphire', type: 'Liability', categoryId: 3 },
-      { name: 'Fidelity Brokerage', type: 'Asset', categoryId: 4 },
-      { name: 'Vanguard Index Fund', type: 'Asset', categoryId: 4 },
-      { name: 'Roth IRA', type: 'Asset', categoryId: 5 },
-      { name: '401(k)', type: 'Asset', categoryId: 5 },
-      { name: 'Mortgage', type: 'Liability', categoryId: 6 },
-      { name: 'Auto Loan', type: 'Liability', categoryId: 6 },
-      { name: 'Wallet', type: 'Asset', categoryId: 7 }
+      { name: 'Chase Checking', type: 'Asset', categoryId: 1, isActive: true },
+      {
+        name: 'Bank of America Checking',
+        type: 'Asset',
+        categoryId: 1,
+        isActive: true
+      },
+      {
+        name: 'Capital One Savings',
+        type: 'Asset',
+        categoryId: 2,
+        isActive: true
+      },
+      {
+        name: 'Ally High-Yield Savings',
+        type: 'Asset',
+        categoryId: 2,
+        isActive: true
+      },
+      { name: 'Discover it', type: 'Liability', categoryId: 3, isActive: true },
+      {
+        name: 'Chase Sapphire',
+        type: 'Liability',
+        categoryId: 3,
+        isActive: true
+      },
+      {
+        name: 'Fidelity Brokerage',
+        type: 'Asset',
+        categoryId: 4,
+        isActive: true
+      },
+      {
+        name: 'Vanguard Index Fund',
+        type: 'Asset',
+        categoryId: 4,
+        isActive: true
+      },
+      { name: 'Roth IRA', type: 'Asset', categoryId: 5, isActive: true },
+      { name: '401(k)', type: 'Asset', categoryId: 5, isActive: true },
+      { name: 'Mortgage', type: 'Liability', categoryId: 6, isActive: true },
+      { name: 'Auto Loan', type: 'Liability', categoryId: 6, isActive: true },
+      { name: 'Wallet', type: 'Asset', categoryId: 7, isActive: true }
     ];
   }
 
