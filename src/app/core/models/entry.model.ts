@@ -2,6 +2,6 @@ export class Entry {
   id?: number;
   // MM/DD/YYYY
   date!: string;
-  accountId!: number;
+  accountId!: number; // FK to Account
   balance!: number;
 }

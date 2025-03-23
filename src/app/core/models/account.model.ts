@@ -1,12 +1,10 @@
-import { AccountCategory } from '../enums/account-category.enum';
-
 export class Account {
   id?: number;
-  type!: string;
-  category!: AccountCategory;
-  institutionName!: string;
+  name!: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
+  type!: 'Asset' | 'Liability';
+  categoryId!: number; // FK to AccountCategory
 
   toString(): string {
-    return `${this.institutionName} - ${this.type}`;
+    return this.name;
   }
 }

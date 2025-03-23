@@ -1,19 +1,30 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import {
   MatPaginator,
   MatPaginatorModule,
   PageEvent
 } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { FormattedDataService } from '../../core/services/formatted-data.service';
-
-interface TableEntry {
-  date: string;
-  [accountName: string]: any;
-}
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { AccountCategory } from '../../core/models/account-category.model';
+import { Account } from '../../core/models/account.model';
+import { AccountCategoryService } from '../../core/services/account-category.service';
+import { AccountService } from '../../core/services/account.service';
+import {
+  FormattedDataService,
+  FormattedEntry
+} from '../../core/services/formatted-data.service';
+import { GlobalEventService } from '../../core/services/global-event.service';
+import { GlobalEvents } from '../../core/utils/global-events';
+import { DeleteDialogComponent } from '../delete-dialog/delete-dialog.component';
+import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 
 @Component({
   selector: 'app-entries',
@@ -23,6 +34,9 @@ interface TableEntry {
     MatSelectModule,
     MatSortModule,
     MatPaginatorModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
     DatePipe,
     CurrencyPipe,
     CommonModule
@@ -32,69 +46,133 @@ interface TableEntry {
 })
 export class EntriesComponent implements OnInit {
   displayedColumns: string[] = ['date'];
-  dataSource = new MatTableDataSource<TableEntry>([]);
+  dataSource = new MatTableDataSource<any>([]);
   totalEntries = 0;
   pageSize = 5;
   pageIndex = 0;
-  accounts: string[] = [];
+  accounts: Account[] = [];
+  accountCategories: AccountCategory[] = [];
+  formattedEntries: FormattedEntry[] = [];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private formattedDataService: FormattedDataService) {}
+  constructor(
+    private globalEventService: GlobalEventService,
+    private accountService: AccountService,
+    public accountCategoryService: AccountCategoryService,
+    private formattedData: FormattedDataService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) {}
 
-  ngOnInit(): void {
-    this.loadEntries();
+  async ngOnInit(): Promise<void> {
+    this.accounts = await this.accountService.getAccounts();
+    this.accountCategories =
+      await this.accountCategoryService.getAccountCategories();
+    this.formattedEntries = await this.formattedData.getFormattedEntries();
+
+    this.displayedColumns = [
+      'date',
+      ...this.accounts.map((account) => account.toString()),
+      'actions' // Add actions column
+    ];
+
+    this.dataSource = new MatTableDataSource<FormattedEntry>(
+      this.formattedEntries
+    );
+
+    // Custom sorting for non-standard columns (especially for account balances)
+    this.dataSource.sortingDataAccessor = (
+      entry: FormattedEntry,
+      columnId: string
+    ) => {
+      if (columnId === 'date') {
+        return new Date(entry.date).getTime(); // Convert to timestamp for date sorting
+      }
+
+      // For account columns (which are account.toString())
+      const account = this.accounts.find((acc) => acc.toString() === columnId);
+      if (account) {
+        return this.getAccountBalance(entry, account.id!);
+      }
+
+      return 0;
+    };
+
+    this.totalEntries = this.formattedEntries.length;
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+
+    this.sort.sort({
+      id: 'date',
+      start: 'desc',
+      disableClear: false
+    });
+
+    this.globalEventService.events$.subscribe((event) => {
+      if (event.name === GlobalEvents.REFRESH_ENTRIES) {
+        this.refreshEntries();
+      }
+    });
   }
 
-  async loadEntries(event?: PageEvent): Promise<void> {
-    const formattedEntries = await this.formattedDataService.getEntriesByDate();
-    this.totalEntries = formattedEntries.length;
+  getAccountCategory(categoryId: number): string {
+    return (
+      this.accountCategories
+        .find((category) => category.id === categoryId)
+        ?.toString() || ''
+    );
+  }
 
-    // Extract all unique account names
-    const uniqueAccounts = new Set<string>();
-    formattedEntries.forEach((entry) => {
-      entry.accounts.forEach((account) => {
-        uniqueAccounts.add(account.account);
-      });
+  getAccountBalance(entry: FormattedEntry, accountId: number): number {
+    const accountEntry = entry.accounts.find(
+      (account) => account.id === accountId
+    );
+    return accountEntry ? accountEntry.balance : 0;
+  }
+
+  loadEntries(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+  }
+
+  openUpdateDialog(entry: FormattedEntry): void {
+    const dialogRef = this.dialog.open(EntryDialogComponent, {
+      data: { entry: entry }
     });
 
-    this.accounts = Array.from(uniqueAccounts);
-    this.displayedColumns = ['date', ...this.accounts];
-
-    // Transform data to have accounts as columns
-    const tableData: TableEntry[] = formattedEntries.map((entry) => {
-      const tableEntry: TableEntry = { date: entry.date };
-
-      // Initialize all account values to null/undefined
-      this.accounts.forEach((account) => {
-        tableEntry[account] = 0;
-      });
-
-      // Fill in the values for accounts that have data
-      entry.accounts.forEach((accountData) => {
-        tableEntry[accountData.account] = accountData.balance;
-      });
-
-      return tableEntry;
+    dialogRef.afterClosed().subscribe((result) => {
+      console.log(result);
+      if (result) {
+        this.snackBar.open('Entry updated', 'Dismiss', { duration: 5000 });
+      }
     });
+  }
 
-    // Sort the table data by date in descending order (latest first)
-    const sortedData = tableData.sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+  openDeleteDialog(entry: FormattedEntry): void {
+    const dialogRef = this.dialog.open(DeleteDialogComponent);
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.deleteEntry(entry);
+      }
     });
+  }
 
-    this.dataSource.data = sortedData;
-
-    this.dataSource.data = tableData;
-
-    // Apply sorting and pagination after data is loaded
-    this.dataSource.sort = this.sort;
-    this.dataSource.paginator = this.paginator;
-
-    if (event) {
-      this.pageSize = event.pageSize;
-      this.pageIndex = event.pageIndex;
+  private async deleteEntry(entry: FormattedEntry): Promise<void> {
+    try {
+      await this.formattedData.deleteFormattedEntries(entry.date);
+      this.snackBar.open('Entry deleted', 'Dismiss', { duration: 5000 });
+      this.refreshEntries();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      this.snackBar.open('Error deleting entry', 'Dismiss', { duration: 5000 });
     }
+  }
+
+  private async refreshEntries(): Promise<void> {
+    this.formattedEntries = await this.formattedData.getFormattedEntries();
+    this.dataSource.data = this.formattedEntries;
+    this.totalEntries = this.formattedEntries.length;
   }
 }

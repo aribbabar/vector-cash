@@ -1,18 +1,18 @@
 import { Injectable } from '@angular/core';
-import { AccountCategory } from '../enums/account-category.enum';
 import { AccountService } from './account.service';
 import { EntryService } from './entry.service';
 
-export interface FormattedEntry {
-  date: string;
-  accounts: { accountId: number; account: string; balance: number }[];
+export interface FormattedAccount {
+  id: number;
+  name: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
+  type: 'Asset' | 'Liability';
+  categoryId: number; // FK to AccountCategory
+  balance: number;
 }
 
-export interface FormattedNetWorth {
+export interface FormattedEntry {
   date: string;
-  assets: number;
-  liabilities: number;
-  netWorth: number;
+  accounts: FormattedAccount[]; // Changed from 'account' to 'accounts' to better reflect it's an array
 }
 
 @Injectable({
@@ -24,127 +24,48 @@ export class FormattedDataService {
     private accountService: AccountService
   ) {}
 
-  // Function to group entries by unique dates with a list of accounts and their balances.
-  async getEntriesByDate(): Promise<FormattedEntry[]> {
+  // Returns an array of accounts for each unique date
+  async getFormattedEntries(): Promise<FormattedEntry[]> {
+    const formattedEntries: FormattedEntry[] = [];
     const entries = await this.entryService.getEntries();
-    const result: FormattedEntry[] = [];
+    const accounts = await this.accountService.getAccounts();
 
-    for (const entry of entries) {
-      const date = entry.date;
-      const accountId = entry.accountId;
-      const account = await this.accountService.getAccount(accountId);
-      const balance = entry.balance;
+    // Get unique dates
+    const uniqueDates = [...new Set(entries.map((entry) => entry.date))];
 
-      const existingEntry = result.find((e) => e.date === date);
+    // Create a formatted entry for each unique date
+    uniqueDates.forEach((date) => {
+      const accountsForDate = entries
+        .filter((entry) => entry.date === date)
+        .map((entry) => {
+          const account = accounts.find(
+            (account) => account.id === entry.accountId
+          ) as FormattedAccount;
 
-      if (existingEntry) {
-        const existingAccount = existingEntry.accounts.find(
-          (a) => a.account === account.toString()
-        );
+          if (!account) {
+            throw new Error('Account not found');
+          }
 
-        if (!existingAccount) {
-          existingEntry.accounts.push({
-            accountId: account.id!,
-            account: account.toString(),
-            balance
-          });
-        }
-      } else {
-        result.push({
-          date,
-          accounts: [
-            { accountId: account.id!, account: account.toString(), balance }
-          ]
+          return {
+            ...account,
+            balance: entry.balance
+          };
         });
-      }
-    }
 
-    return result;
-  }
-
-  async getCurrentNetWorth(): Promise<{
-    assets: number;
-    liabilities: number;
-    netWorth: number;
-  }> {
-    const entries = await this.getEntriesByDate();
-    const latestEntry = entries.reduce((latest, current) => {
-      return current.date > latest.date ? current : latest;
-    }, entries[0]);
-
-    const assets = await latestEntry.accounts.reduce(
-      async (totalPromise, account) => {
-        const total = await totalPromise;
-        const accountDetails = await this.accountService.getAccount(
-          account.accountId
-        );
-        return accountDetails.category === AccountCategory.ASSET
-          ? total + account.balance
-          : total;
-      },
-      Promise.resolve(0)
-    );
-
-    const liabilities = await latestEntry.accounts.reduce(
-      async (totalPromise, account) => {
-        const total = await totalPromise;
-        const accountDetails = await this.accountService.getAccount(
-          account.accountId
-        );
-        return accountDetails.category === AccountCategory.LIABILITY
-          ? total + account.balance
-          : total;
-      },
-      Promise.resolve(0)
-    );
-
-    const netWorth = assets - liabilities;
-
-    return { assets, liabilities, netWorth };
-  }
-
-  // Returns the total assets, liabilities, and net worth for each unique date.
-  async getNetWorthOverTime(): Promise<FormattedNetWorth[]> {
-    const entries = await this.getEntriesByDate();
-    const result: FormattedNetWorth[] = [];
-
-    for (const entry of entries) {
-      const assets = await entry.accounts.reduce(
-        async (totalPromise, account) => {
-          const total = await totalPromise;
-          const accountDetails = await this.accountService.getAccount(
-            account.accountId
-          );
-          return accountDetails.category === AccountCategory.ASSET
-            ? total + account.balance
-            : total;
-        },
-        Promise.resolve(0)
-      );
-
-      const liabilities = await entry.accounts.reduce(
-        async (totalPromise, account) => {
-          const total = await totalPromise;
-          const accountDetails = await this.accountService.getAccount(
-            account.accountId
-          );
-          return accountDetails.category === AccountCategory.LIABILITY
-            ? total + account.balance
-            : total;
-        },
-        Promise.resolve(0)
-      );
-
-      const netWorth = assets - liabilities;
-
-      result.push({
-        date: entry.date,
-        assets,
-        liabilities,
-        netWorth
+      formattedEntries.push({
+        date,
+        accounts: accountsForDate // Updated to match the interface property name
       });
-    }
+    });
 
-    return result;
+    return formattedEntries;
+  }
+
+  /**
+   *
+   * @param date Date is formatted as 'MM/DD/YYYY'
+   */
+  async deleteFormattedEntries(date: string): Promise<void> {
+    await this.entryService.deleteEntries(date);
   }
 }

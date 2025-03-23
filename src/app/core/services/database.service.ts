@@ -1,8 +1,8 @@
 import Dexie, { Table } from 'dexie';
-import { AccountCategory } from '../enums/account-category.enum';
+import { AccountCategory } from '../models/account-category.model';
 import { Account } from '../models/account.model';
 import { Entry } from '../models/entry.model';
-import { seedData } from './seed-data';
+import { SeedDataGenerator } from '../utils/seed-data-generator';
 
 export class VectorCashDatabase extends Dexie {
   accounts!: Table<Account, number>;
@@ -12,11 +12,13 @@ export class VectorCashDatabase extends Dexie {
   constructor() {
     super('VectorCashDB');
     this.version(1).stores({
-      accounts: '++id, name, category',
+      accountCategories: '++id, name',
+      accounts: '++id, name, type, categoryId',
       entries: '++id, date, accountId, balance'
     });
 
     // Map tables to classes
+    this.accountCategories.mapToClass(AccountCategory);
     this.accounts.mapToClass(Account);
     this.entries.mapToClass(Entry);
 
@@ -24,68 +26,32 @@ export class VectorCashDatabase extends Dexie {
   }
 
   async seedDatabase() {
-    // Only seed if the database is empty
-    const accountCount = await this.accounts.count();
-
-    if (accountCount === 0) {
-      console.log('Seeding accounts with initial data...');
-
-      // Seed accounts
-      await this.seedAccounts();
-
-      // Seed entries
-      await this.seedEntries();
-
-      console.log('Accounts seeding completed.');
+    if ((await this.accountCategories.count()) === 0) {
+      await this.seedAccountCategories();
     }
 
-    const entriesCount = await this.entries.count();
-
-    if (entriesCount === 0) {
-      console.log('Seeding entries with initial data...');
-
-      // Seed accounts
+    if ((await this.accounts.count()) === 0) {
       await this.seedAccounts();
-
-      // Seed entries
-      await this.seedEntries();
-
-      console.log('Entries seeding completed.');
     }
+
+    if ((await this.entries.count()) === 0) {
+      await this.seedEntries();
+    }
+  }
+
+  private async seedAccountCategories() {
+    const categories = SeedDataGenerator.generateAccountCategories();
+    await this.accountCategories.bulkAdd(categories);
   }
 
   private async seedAccounts() {
-    const sampleAccounts: Account[] = [
-      {
-        type: 'Checking Account',
-        category: AccountCategory.ASSET,
-        institutionName: 'Chase Bank'
-      },
-      {
-        type: 'Savings Account',
-        category: AccountCategory.ASSET,
-        institutionName: 'Ally Bank'
-      },
-      {
-        type: 'Credit Card',
-        category: AccountCategory.LIABILITY,
-        institutionName: 'American Express'
-      }
-    ];
-
-    // Insert all accounts and collect their IDs
-    for (const account of sampleAccounts) {
-      await this.accounts.add(account);
-    }
+    const accounts = SeedDataGenerator.generateAccounts();
+    await this.accounts.bulkAdd(accounts);
   }
 
   private async seedEntries() {
-    const sampleEntries: Entry[] = seedData;
-
-    // Insert all entries
-    for (const entry of sampleEntries) {
-      await this.entries.add(entry);
-    }
+    const entries = SeedDataGenerator.generateEntries();
+    await this.entries.bulkAdd(entries);
   }
 }
 

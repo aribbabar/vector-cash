@@ -1,4 +1,34 @@
 <div class="container">
+  <div class="action-buttons">
+    <button
+      mat-raised-button
+      color="primary"
+      class="action-button"
+      (click)="openEntryDialog()"
+    >
+      <mat-icon>add_circle</mat-icon>
+      Add Entry
+    </button>
+    <button
+      mat-raised-button
+      color="accent"
+      class="action-button"
+      (click)="openAccountDialog()"
+    >
+      <mat-icon>account_balance</mat-icon>
+      Add Account
+    </button>
+    <button
+      mat-raised-button
+      color="warn"
+      class="action-button"
+      (click)="openCategoryDialog()"
+    >
+      <mat-icon>category</mat-icon>
+      Add Category
+    </button>
+  </div>
+
   <div class="cards-container">
     <mat-card class="summary-card">
       <mat-card-title>Assets</mat-card-title>
@@ -22,7 +52,7 @@
     </mat-card>
   </div>
 
-  <app-chart></app-chart>
-
+  <app-accounts></app-accounts>
   <app-entries></app-entries>
+  <app-account-categories></app-account-categories>
 </div>

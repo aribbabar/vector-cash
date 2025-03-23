@@ -1,48 +1,58 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { FormattedDataService } from '../../core/services/formatted-data.service';
-import { ChartComponent } from '../chart/chart.component';
+import { AccountCategoriesComponent } from '../account-categories/account-categories.component';
+import { AccountCategoryDialogComponent } from '../account-category-dialog/account-category-dialog.component';
+import { AccountDialogComponent } from '../account-dialog/account-dialog.component';
+import { AccountsComponent } from '../accounts/accounts.component';
 import { EntriesComponent } from '../entries/entries.component';
+import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
+  standalone: true,
   imports: [
     MatButtonModule,
     MatCardModule,
     MatIconModule,
     MatDialogModule,
     CommonModule,
-    MatIconModule,
     EntriesComponent,
-    ChartComponent
+    AccountsComponent,
+    AccountCategoriesComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   assetsTotal = 0;
   liabilitiesTotal = 0;
   netWorth = 0;
-  showFabOptions = false;
+  isLoading = false;
 
-  constructor(
-    private dialog: MatDialog,
-    private formattedDataService: FormattedDataService
-  ) {}
+  constructor(private dialog: MatDialog) {}
 
-  async ngOnInit(): Promise<void> {
-    const { assets, liabilities, netWorth } =
-      await this.formattedDataService.getCurrentNetWorth();
-    this.assetsTotal = assets;
-    this.liabilitiesTotal = liabilities;
-    this.netWorth = netWorth;
+  openEntryDialog(): void {
+    this.blurActiveElement();
+    this.dialog.open(EntryDialogComponent);
   }
 
-  toggleFabOptions() {
-    this.showFabOptions = !this.showFabOptions;
+  openAccountDialog(): void {
+    this.blurActiveElement();
+    this.dialog.open(AccountDialogComponent);
+  }
+
+  openCategoryDialog(): void {
+    this.blurActiveElement();
+    this.dialog.open(AccountCategoryDialogComponent);
+  }
+
+  // Prevents the Blocked aria-hidden attribute error
+  blurActiveElement(): void {
+    const activeElement = document.activeElement as HTMLElement;
+    activeElement.blur();
   }
 }
