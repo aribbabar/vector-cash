@@ -5,13 +5,55 @@ import { Entry } from '../models/entry.model';
 export class SeedDataGenerator {
   static generateAccountCategories(): AccountCategory[] {
     return [
-      { name: 'Checking', type: 'Asset', isActive: true },
-      { name: 'Savings', type: 'Asset', isActive: true },
-      { name: 'Investment', type: 'Asset', isActive: true },
-      { name: 'Retirement', type: 'Asset', isActive: true },
-      { name: 'Cash', type: 'Asset', isActive: true },
-      { name: 'Credit Card', type: 'Liability', isActive: true },
-      { name: 'Loan', type: 'Liability', isActive: true }
+      {
+        id: 1,
+        name: 'Checking',
+        type: 'Asset',
+        description: 'My checking accounts',
+        isActive: true
+      },
+      {
+        id: 2,
+        name: 'Savings',
+        type: 'Asset',
+        description: 'Accounts for saving money',
+        isActive: true
+      },
+      {
+        id: 3,
+        name: 'Investment',
+        type: 'Asset',
+        description: 'Stock and investment accounts',
+        isActive: true
+      },
+      {
+        id: 4,
+        name: 'Retirement',
+        type: 'Asset',
+        description: 'Retirement investment accounts',
+        isActive: true
+      },
+      {
+        id: 5,
+        name: 'Cash',
+        type: 'Asset',
+        description: 'Physical cash holdings',
+        isActive: true
+      },
+      {
+        id: 6,
+        name: 'Credit Card',
+        type: 'Liability',
+        description: 'Credit card accounts',
+        isActive: true
+      },
+      {
+        id: 7,
+        name: 'Loan',
+        type: 'Liability',
+        description: 'Long-term loans and debts',
+        isActive: true
+      }
     ];
   }
 

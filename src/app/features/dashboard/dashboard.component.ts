@@ -92,17 +92,23 @@ export class DashboardComponent implements OnInit {
 
   openEntryDialog(): void {
     this.blurActiveElement();
-    this.dialog.open(EntryDialogComponent);
+    this.dialog.open(EntryDialogComponent, {
+      width: '500px'
+    });
   }
 
   openAccountDialog(): void {
     this.blurActiveElement();
-    this.dialog.open(AccountDialogComponent);
+    this.dialog.open(AccountDialogComponent, {
+      width: '500px'
+    });
   }
 
   openCategoryDialog(): void {
     this.blurActiveElement();
-    this.dialog.open(AccountCategoryDialogComponent);
+    this.dialog.open(AccountCategoryDialogComponent, {
+      width: '500px'
+    });
   }
 
   // Prevents the Blocked aria-hidden attribute error

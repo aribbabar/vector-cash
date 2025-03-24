@@ -12,8 +12,8 @@ export class VectorCashDatabase extends Dexie {
   constructor() {
     super('VectorCashDB');
     this.version(1).stores({
-      accountCategories: '++id, name',
-      accounts: '++id, name, type, categoryId',
+      accountCategories: '++id, name, type, description, isActive',
+      accounts: '++id, name, categoryId, isActive',
       entries: '++id, date, accountId, balance'
     });
 

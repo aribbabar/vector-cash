@@ -1,13 +1,15 @@
 <div class="delete-dialog-content">
-  <h2 class="delete-dialog-title">Confirm Deletion</h2>
+  <h2 class="delete-dialog-title">{{ data.title }}</h2>
 
   <div class="delete-dialog-message">
-    <p>Are you sure you?</p>
+    <p>{{ data.message }}</p>
     <p class="warning">This action cannot be undone.</p>
   </div>
 
   <div class="delete-dialog-actions">
-    <button class="btn-cancel" (click)="cancel()">Cancel</button>
-    <button class="btn-delete" (click)="confirmDelete()">Delete</button>
+    <button class="btn-cancel" (click)="cancel()">{{ data.cancelText }}</button>
+    <button class="btn-delete" (click)="confirmDelete()">
+      {{ data.confirmText }}
+    </button>
   </div>
 </div>

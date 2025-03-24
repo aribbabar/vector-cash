@@ -42,6 +42,19 @@ export class AccountService {
     return account;
   }
 
+  /**
+   *
+   * @param categoryId Category ID
+   * @returns If there are active accounts in the category
+   */
+  async hasActiveAccountsInCategory(categoryId: number): Promise<boolean> {
+    const accounts = await db.accounts
+      .where('categoryId')
+      .equals(categoryId)
+      .toArray();
+    return accounts.some((account) => account.isActive);
+  }
+
   async updateAccount(account: Account) {
     await db.accounts.update(account.id!, account);
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);

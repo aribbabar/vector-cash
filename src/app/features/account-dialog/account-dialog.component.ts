@@ -74,7 +74,7 @@ export class AccountDialogComponent implements OnInit {
     try {
       this.isLoading = true;
       this.categories =
-        await this.accountCategoryService.getAccountCategories();
+        await this.accountCategoryService.getActiveAccountCategories();
     } catch (error) {
       console.error('Failed to load account categories:', error);
       this.snackBar.open('Failed to load account categories', 'Dismiss', {

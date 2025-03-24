@@ -72,11 +72,30 @@ export class EntriesComponent implements OnInit {
       await this.accountCategoryService.getAccountCategories();
     this.formattedEntries = await this.formattedData.getFormattedEntries();
 
-    this.refreshDisplayColumns();
+    // Separate accounts into assets and liabilities
+    const assetAccounts = this.accounts.filter((account) => {
+      const category = this.accountCategories.find(
+        (cat) => cat.id === account.categoryId
+      );
+      return category?.type === 'Asset';
+    });
 
-    this.dataSource = new MatTableDataSource<FormattedEntry>(
-      this.formattedEntries
-    );
+    const liabilityAccounts = this.accounts.filter((account) => {
+      const category = this.accountCategories.find(
+        (cat) => cat.id === account.categoryId
+      );
+      return category?.type === 'Liability';
+    });
+
+    // Build columns with date first, then assets, then liabilities, then actions
+    this.displayedColumns = [
+      'date',
+      ...assetAccounts.map((account) => account.id!.toString()),
+      ...liabilityAccounts.map((account) => account.id!.toString()),
+      'actions'
+    ];
+
+    this.dataSource.data = this.formattedEntries;
 
     // Custom sorting for non-standard columns (especially for account balances)
     this.dataSource.sortingDataAccessor = (
@@ -88,7 +107,9 @@ export class EntriesComponent implements OnInit {
       }
 
       // For account columns (which are account.toString())
-      const account = this.accounts.find((acc) => acc.toString() === columnId);
+      const account = this.accounts.find(
+        (acc) => acc.id!.toString() === columnId
+      );
       if (account) {
         return this.getAccountBalance(entry, account.id!);
       }
@@ -109,11 +130,10 @@ export class EntriesComponent implements OnInit {
     this.globalEventService.events$.subscribe((event) => {
       if (event.name === GlobalEvents.REFRESH_ENTRIES) {
         this.refreshEntries();
-      } else if (
-        event.name === GlobalEvents.REFRESH_ACCOUNTS ||
-        event.name === GlobalEvents.REFRESH_CATEGORIES
-      ) {
-        this.refreshDisplayColumns();
+      } else if (event.name === GlobalEvents.REFRESH_ACCOUNTS) {
+        this.refreshAccounts();
+      } else if (event.name === GlobalEvents.REFRESH_CATEGORIES) {
+        this.refreshCategories();
       }
     });
   }
@@ -159,74 +179,28 @@ export class EntriesComponent implements OnInit {
     });
   }
 
-  private async deleteEntry(entry: FormattedEntry): Promise<void> {
+  async deleteEntry(entry: FormattedEntry): Promise<void> {
     try {
       await this.formattedData.deleteFormattedEntries(entry.date);
       this.snackBar.open('Entry deleted', 'Dismiss', { duration: 5000 });
-      this.refreshEntries();
     } catch (error) {
       console.error('Error deleting entry:', error);
       this.snackBar.open('Error deleting entry', 'Dismiss', { duration: 5000 });
     }
   }
 
-  private async refreshEntries(): Promise<void> {
+  async refreshEntries(): Promise<void> {
     this.formattedEntries = await this.formattedData.getFormattedEntries();
-    this.dataSource.data = this.formattedEntries;
     this.totalEntries = this.formattedEntries.length;
+    this.dataSource.data = this.formattedEntries;
   }
 
-  private async refreshDisplayColumns(): Promise<void> {
+  async refreshAccounts(): Promise<void> {
     this.accounts = await this.accountService.getAccounts();
+  }
+
+  async refreshCategories(): Promise<void> {
     this.accountCategories =
       await this.accountCategoryService.getAccountCategories();
-
-    // Separate accounts into assets and liabilities
-    const assetAccounts = this.accounts.filter((account) => {
-      const category = this.accountCategories.find(
-        (cat) => cat.id === account.categoryId
-      );
-      return category?.type === 'Asset';
-    });
-
-    const liabilityAccounts = this.accounts.filter((account) => {
-      const category = this.accountCategories.find(
-        (cat) => cat.id === account.categoryId
-      );
-      return category?.type === 'Liability';
-    });
-
-    // Build columns with date first, then assets, then liabilities, then actions
-    this.displayedColumns = [
-      'date',
-      ...assetAccounts.map((account) => account.id!.toString()),
-      ...liabilityAccounts.map((account) => account.id!.toString()),
-      'actions'
-    ];
-
-    this.dataSource.data = this.formattedEntries;
-
-    // Reapply sorting accessor
-    this.dataSource.sortingDataAccessor = (
-      entry: FormattedEntry,
-      columnId: string
-    ) => {
-      if (columnId === 'date') {
-        return new Date(entry.date).getTime();
-      }
-
-      const account = this.accounts.find(
-        (acc) => acc.id!.toString() === columnId
-      );
-      if (account) {
-        return this.getAccountBalance(entry, account.id!);
-      }
-
-      return 0;
-    };
-
-    // Reattach paginator and sort - VERY IMPORTANT
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
   }
 }

@@ -10,7 +10,23 @@ import { GlobalEventService } from './global-event.service';
 export class AccountCategoryService {
   constructor(private globalEventService: GlobalEventService) {}
 
+  /**
+   * Adds a new account category to the database.
+   *
+   * @param {AccountCategory} accountCategory - The account category to be added.
+   * @throws {Error} If an account category with the same name already exists.
+   * @returns {Promise<void>} A promise that resolves when the account category has been added.
+   */
   async addAccountCategory(accountCategory: AccountCategory) {
+    if (
+      (await db.accountCategories
+        .where('name')
+        .equals(accountCategory.name)
+        .count()) > 0
+    ) {
+      throw new Error('An account category with this name already exists');
+    }
+
     await db.accountCategories.add(accountCategory);
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
   }
@@ -23,8 +39,10 @@ export class AccountCategoryService {
     return await db.accountCategories.toArray();
   }
 
-  async getAssetAccountCategories(): Promise<AccountCategory[]> {
-    return await db.accountCategories.where('type').equals('Asset').toArray();
+  async getActiveAccountCategories(): Promise<AccountCategory[]> {
+    return await db.accountCategories
+      .filter((category) => category.isActive === true)
+      .toArray();
   }
 
   async getLiabilityAccountCategories(): Promise<AccountCategory[]> {
@@ -40,6 +58,11 @@ export class AccountCategoryService {
     }
 
     await db.accountCategories.update(accountCategory.id, accountCategory);
+    this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
+  }
+
+  async setAccountCategoryActiveStatus(id: number, isActive: boolean) {
+    await db.accountCategories.update(id, { isActive });
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
   }
 
