@@ -55,18 +55,15 @@ export class AccountDialogComponent implements OnInit {
   ) {
     this.accountForm = this.formBuilder.group({
       name: ['', [Validators.required]],
-      type: ['Asset', [Validators.required]],
       categoryId: ['', [Validators.required]],
       isActive: [true]
     });
 
     // If we have data, we're updating an existing account
-    console.log(data);
     if (data && data.account) {
       this.isUpdate = true;
       this.accountForm.patchValue({
         name: data.account.name,
-        type: data.account.type,
         categoryId: data.account.categoryId,
         isActive: data.account.isActive
       });
@@ -102,7 +99,6 @@ export class AccountDialogComponent implements OnInit {
       const formValues = this.accountForm.value;
       const account: Account = {
         name: formValues.name,
-        type: formValues.type,
         categoryId: formValues.categoryId,
         isActive: formValues.isActive
       };

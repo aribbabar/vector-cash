@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
+import { AccountCategoryService } from './account-category.service';
 import { AccountService } from './account.service';
 import { EntryService } from './entry.service';
 
 export interface FormattedAccount {
   id: number;
   name: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
-  type: 'Asset' | 'Liability';
-  categoryId: number; // FK to AccountCategory
+  categoryId: number;
   balance: number;
 }
 
@@ -21,49 +21,73 @@ export interface FormattedEntry {
 export class FormattedDataService {
   constructor(
     private entryService: EntryService,
-    private accountService: AccountService
+    private accountService: AccountService,
+    private accountCategoryService: AccountCategoryService
   ) {}
 
-  // Returns an array of accounts that are active for each unique date
+  /**
+   *
+   * @returns An array of accounts for each unique date
+   */
   async getFormattedEntries(): Promise<FormattedEntry[]> {
     const formattedEntries: FormattedEntry[] = [];
     const entries = await this.entryService.getEntries();
-    const accounts = await this.accountService.getAccounts();
 
     // Get unique dates
     const uniqueDates = [...new Set(entries.map((entry) => entry.date))];
 
-    // Create a formatted entry for each unique date
-    uniqueDates.forEach((date) => {
-      const accountsForDate = entries
-        .filter((entry) => entry.date === date)
-        .map((entry) => {
-          const account = accounts.find(
-            (account) => account.id === entry.accountId
-          );
+    // Process entries for each unique date
+    for (const date of uniqueDates) {
+      // Get all entries for this date
+      const entriesForDate = entries.filter((entry) => entry.date === date);
 
-          if (!account) {
-            console.error(
-              `Account not found for entry with accountId: ${entry.accountId}`
+      // Get all accounts associated with these entries
+      const accountIds = [
+        ...new Set(entriesForDate.map((entry) => entry.accountId))
+      ];
+      const formattedAccounts: FormattedAccount[] = [];
+
+      // Get details for each account
+      for (const accountId of accountIds) {
+        const account = await this.accountService.getAccount(accountId);
+        if (account) {
+          // Calculate the balance for this account on this date
+          const balance = entriesForDate
+            .filter((entry) => entry.accountId === accountId)
+            .reduce((sum, entry) => sum + entry.balance, 0);
+
+          const accountCategory =
+            await this.accountCategoryService.getAccountCategory(
+              account.categoryId
             );
-            return null;
-          }
+          const accountCategoryName = accountCategory
+            ? accountCategory.name
+            : '';
+          const accountCategoryType = accountCategory
+            ? accountCategory.type
+            : '';
 
-          // Create a properly formatted account with balance
-          return {
+          formattedAccounts.push({
             id: account.id!,
             name: account.name,
-            type: account.type,
             categoryId: account.categoryId,
-            balance: entry.balance
-          } as FormattedAccount;
-        })
-        .filter((account): account is FormattedAccount => account !== null); // Remove null accounts
+            balance: balance
+          });
+        }
+      }
 
+      // Add formatted entry for this date
       formattedEntries.push({
         date,
-        accounts: accountsForDate
+        accounts: formattedAccounts
       });
+    }
+
+    // Sort entries by date (newest first)
+    formattedEntries.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA;
     });
 
     return formattedEntries;
@@ -78,30 +102,46 @@ export class FormattedDataService {
   }
 
   /**
-   *
-   * @returns An array of formatted active accounts with their balances
+   * Gets formatted accounts with their current balances
+   * @param activeOnly When true, returns only active accounts. When false, returns all accounts. Default is false.
+   * @returns An array of formatted accounts
    */
-  async getFormattedAccounts(): Promise<FormattedAccount[]> {
+  async getFormattedAccounts(
+    activeOnly: boolean = false
+  ): Promise<FormattedAccount[]> {
+    const formattedAccounts: FormattedAccount[] = [];
     const accounts = await this.accountService.getAccounts();
 
-    // Filter out inactive accounts first
-    const activeAccounts = accounts.filter((account) => account.isActive);
+    // Filter accounts based on activeOnly parameter
+    const filteredAccounts = activeOnly
+      ? accounts.filter((account) => account.isActive)
+      : accounts;
 
-    // Create an array of promises for each active account's balance
-    const accountPromises = activeAccounts.map(async (account) => {
-      const balance = await this.entryService.getAccountBalance(account.id!);
+    // Process each account
+    for (const account of filteredAccounts) {
+      const lastEntry = await this.entryService.getLastEntry(account.id!);
 
-      return {
+      // Get the account category details
+      const accountCategory =
+        await this.accountCategoryService.getAccountCategory(
+          account.categoryId
+        );
+
+      const balance = lastEntry ? lastEntry.balance : 0;
+
+      // Create the formatted account
+      formattedAccounts.push({
         id: account.id!,
         name: account.name,
-        type: account.type,
         categoryId: account.categoryId,
-        balance: balance
-      } as FormattedAccount;
-    });
+        balance
+      });
+    }
 
-    // Wait for all balance promises to resolve
-    return Promise.all(accountPromises);
+    // Sort accounts alphabetically by name
+    formattedAccounts.sort((a, b) => a.name.localeCompare(b.name));
+
+    return formattedAccounts;
   }
 
   /**

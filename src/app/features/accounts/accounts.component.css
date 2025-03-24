@@ -40,13 +40,6 @@ h4 {
   border-left: 4px solid #f44336;
 }
 
-.total-amount {
-  font-size: 1.2rem;
-  text-align: right;
-  padding: 5px 0;
-  color: #424242;
-}
-
 .accounts-list {
   display: flex;
   flex-wrap: wrap;
@@ -87,20 +80,6 @@ h4 {
 
 .category-group {
   margin-bottom: 20px;
-}
-
-.net-worth-section {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  text-align: center;
-}
-
-.net-worth-amount {
-  font-size: 2rem;
-  font-weight: 500;
-  margin-top: 10px;
 }
 
 .positive {

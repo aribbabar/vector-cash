@@ -1,9 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { AccountCategory } from '../../core/models/account-category.model';
+import { AccountCategoryService } from '../../core/services/account-category.service';
+import {
+  FormattedAccount,
+  FormattedDataService
+} from '../../core/services/formatted-data.service';
+import { GlobalEventService } from '../../core/services/global-event.service';
 import { AccountCategoriesComponent } from '../account-categories/account-categories.component';
 import { AccountCategoryDialogComponent } from '../account-category-dialog/account-category-dialog.component';
 import { AccountDialogComponent } from '../account-dialog/account-dialog.component';
@@ -28,13 +35,60 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  activeAccounts: FormattedAccount[] = [];
+  categories: AccountCategory[] = [];
   assetsTotal = 0;
   liabilitiesTotal = 0;
   netWorth = 0;
-  isLoading = false;
 
-  constructor(private dialog: MatDialog) {}
+  constructor(
+    private dialog: MatDialog,
+    private globalEventService: GlobalEventService,
+    private accountCategoryService: AccountCategoryService,
+    private formattedDataService: FormattedDataService
+  ) {}
+
+  async ngOnInit(): Promise<void> {
+    this.activeAccounts = await this.formattedDataService.getFormattedAccounts(
+      true
+    );
+    this.categories = await this.accountCategoryService.getAccountCategories();
+
+    // Calculate financial totals when data is loaded
+    this.calculateFinancialTotals();
+
+    this.globalEventService.events$.subscribe((event) => {
+      if (event) {
+        this.calculateFinancialTotals();
+      }
+    });
+  }
+
+  calculateFinancialTotals(): void {
+    // Calculate assets total
+    this.assetsTotal = this.activeAccounts
+      .filter((account) => {
+        const category = this.categories.find(
+          (cat) => cat.id === account.categoryId
+        );
+        return category?.type === 'Asset';
+      })
+      .reduce((total, account) => total + account.balance, 0);
+
+    // Calculate liabilities total
+    this.liabilitiesTotal = this.activeAccounts
+      .filter((account) => {
+        const category = this.categories.find(
+          (cat) => cat.id === account.categoryId
+        );
+        return category?.type === 'Liability';
+      })
+      .reduce((total, account) => total + account.balance, 0);
+
+    // Calculate net worth
+    this.netWorth = this.assetsTotal - this.liabilitiesTotal;
+  }
 
   openEntryDialog(): void {
     this.blurActiveElement();

@@ -5,61 +5,55 @@ import { Entry } from '../models/entry.model';
 export class SeedDataGenerator {
   static generateAccountCategories(): AccountCategory[] {
     return [
-      { name: 'Checking', isActive: true },
-      { name: 'Savings', isActive: true },
-      { name: 'Credit Card', isActive: true },
-      { name: 'Investment', isActive: true },
-      { name: 'Retirement', isActive: true },
-      { name: 'Loan', isActive: true },
-      { name: 'Cash', isActive: true }
+      { name: 'Checking', type: 'Asset', isActive: true },
+      { name: 'Savings', type: 'Asset', isActive: true },
+      { name: 'Investment', type: 'Asset', isActive: true },
+      { name: 'Retirement', type: 'Asset', isActive: true },
+      { name: 'Cash', type: 'Asset', isActive: true },
+      { name: 'Credit Card', type: 'Liability', isActive: true },
+      { name: 'Loan', type: 'Liability', isActive: true }
     ];
   }
 
   static generateAccounts(): Account[] {
     return [
-      { name: 'Chase Checking', type: 'Asset', categoryId: 1, isActive: true },
+      { name: 'Chase Checking', categoryId: 1, isActive: true },
       {
         name: 'Bank of America Checking',
-        type: 'Asset',
         categoryId: 1,
         isActive: true
       },
       {
         name: 'Capital One Savings',
-        type: 'Asset',
         categoryId: 2,
         isActive: true
       },
       {
         name: 'Ally High-Yield Savings',
-        type: 'Asset',
         categoryId: 2,
         isActive: true
       },
-      { name: 'Discover it', type: 'Liability', categoryId: 3, isActive: true },
+      { name: 'Discover it', categoryId: 6, isActive: true },
       {
         name: 'Chase Sapphire',
-        type: 'Liability',
-        categoryId: 3,
+        categoryId: 6,
         isActive: true
       },
       {
         name: 'Fidelity Brokerage',
-        type: 'Asset',
-        categoryId: 4,
+        categoryId: 3,
         isActive: true
       },
       {
         name: 'Vanguard Index Fund',
-        type: 'Asset',
-        categoryId: 4,
+        categoryId: 3,
         isActive: true
       },
-      { name: 'Roth IRA', type: 'Asset', categoryId: 5, isActive: true },
-      { name: '401(k)', type: 'Asset', categoryId: 5, isActive: true },
-      { name: 'Mortgage', type: 'Liability', categoryId: 6, isActive: true },
-      { name: 'Auto Loan', type: 'Liability', categoryId: 6, isActive: true },
-      { name: 'Wallet', type: 'Asset', categoryId: 7, isActive: true }
+      { name: 'Roth IRA', categoryId: 4, isActive: true },
+      { name: '401(k)', categoryId: 4, isActive: true },
+      { name: 'Mortgage', categoryId: 7, isActive: true },
+      { name: 'Auto Loan', categoryId: 7, isActive: true },
+      { name: 'Wallet', categoryId: 5, isActive: true }
     ];
   }
 
@@ -94,21 +88,24 @@ export class SeedDataGenerator {
           case 2: // Savings
             baseBalance = 10000 + monthsFromStart * 150; // Steady growth
             break;
-          case 3: // Credit Cards
-            baseBalance = 1000 + Math.random() * 1500; // Negative balances, fluctuating
-            break;
-          case 4: // Investment
+          case 3: // Investment
             baseBalance =
               25000 + monthsFromStart * 400 + (Math.random() * 2000 - 1000); // Higher growth with volatility
             break;
-          case 5: // Retirement
+          case 4: // Retirement
             baseBalance = 50000 + monthsFromStart * 500; // Steady higher growth
             break;
-          case 6: // Loans
+          case 5: // Cash
+            baseBalance = 100 + (Math.random() * 200 - 100); // Small fluctuating
+            break;
+          case 6: // Credit Cards (Liability)
+            baseBalance = 1000 + Math.random() * 1500; // Negative balances, fluctuating
+            break;
+          case 7: // Loans (Liability)
             baseBalance = 200000 - monthsFromStart * 800; // Decreasing negative balance
             break;
-          case 7: // Cash
-            baseBalance = 100 + (Math.random() * 200 - 100); // Small fluctuating
+          default:
+            baseBalance = 1000 + Math.random() * 500; // Default case
             break;
         }
 

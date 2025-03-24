@@ -29,7 +29,7 @@
         >
           <div class="account-info">
             <p class="account-name">{{ accountsList[i].name }}</p>
-            <p class="account-type">{{ accountsList[i].type }}</p>
+            <p class="account-type">{{ getCategoryType(accountsList[i]) }}</p>
           </div>
 
           <mat-form-field appearance="outline" floatLabel="always">

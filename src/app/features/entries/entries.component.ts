@@ -46,7 +46,7 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 })
 export class EntriesComponent implements OnInit {
   displayedColumns: string[] = ['date'];
-  dataSource = new MatTableDataSource<any>([]);
+  dataSource = new MatTableDataSource<FormattedEntry>([]);
   totalEntries = 0;
   pageSize = 5;
   pageIndex = 0;
@@ -72,11 +72,7 @@ export class EntriesComponent implements OnInit {
       await this.accountCategoryService.getAccountCategories();
     this.formattedEntries = await this.formattedData.getFormattedEntries();
 
-    this.displayedColumns = [
-      'date',
-      ...this.accounts.map((account) => account.toString()),
-      'actions' // Add actions column
-    ];
+    this.refreshDisplayColumns();
 
     this.dataSource = new MatTableDataSource<FormattedEntry>(
       this.formattedEntries
@@ -113,6 +109,11 @@ export class EntriesComponent implements OnInit {
     this.globalEventService.events$.subscribe((event) => {
       if (event.name === GlobalEvents.REFRESH_ENTRIES) {
         this.refreshEntries();
+      } else if (
+        event.name === GlobalEvents.REFRESH_ACCOUNTS ||
+        event.name === GlobalEvents.REFRESH_CATEGORIES
+      ) {
+        this.refreshDisplayColumns();
       }
     });
   }
@@ -143,7 +144,6 @@ export class EntriesComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log(result);
       if (result) {
         this.snackBar.open('Entry updated', 'Dismiss', { duration: 5000 });
       }
@@ -174,5 +174,59 @@ export class EntriesComponent implements OnInit {
     this.formattedEntries = await this.formattedData.getFormattedEntries();
     this.dataSource.data = this.formattedEntries;
     this.totalEntries = this.formattedEntries.length;
+  }
+
+  private async refreshDisplayColumns(): Promise<void> {
+    this.accounts = await this.accountService.getAccounts();
+    this.accountCategories =
+      await this.accountCategoryService.getAccountCategories();
+
+    // Separate accounts into assets and liabilities
+    const assetAccounts = this.accounts.filter((account) => {
+      const category = this.accountCategories.find(
+        (cat) => cat.id === account.categoryId
+      );
+      return category?.type === 'Asset';
+    });
+
+    const liabilityAccounts = this.accounts.filter((account) => {
+      const category = this.accountCategories.find(
+        (cat) => cat.id === account.categoryId
+      );
+      return category?.type === 'Liability';
+    });
+
+    // Build columns with date first, then assets, then liabilities, then actions
+    this.displayedColumns = [
+      'date',
+      ...assetAccounts.map((account) => account.id!.toString()),
+      ...liabilityAccounts.map((account) => account.id!.toString()),
+      'actions'
+    ];
+
+    this.dataSource.data = this.formattedEntries;
+
+    // Reapply sorting accessor
+    this.dataSource.sortingDataAccessor = (
+      entry: FormattedEntry,
+      columnId: string
+    ) => {
+      if (columnId === 'date') {
+        return new Date(entry.date).getTime();
+      }
+
+      const account = this.accounts.find(
+        (acc) => acc.id!.toString() === columnId
+      );
+      if (account) {
+        return this.getAccountBalance(entry, account.id!);
+      }
+
+      return 0;
+    };
+
+    // Reattach paginator and sort - VERY IMPORTANT
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
   }
 }

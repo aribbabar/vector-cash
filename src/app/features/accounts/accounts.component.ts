@@ -1,7 +1,8 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subscription } from 'rxjs';
 import { AccountCategory } from '../../core/models/account-category.model';
 import { AccountCategoryService } from '../../core/services/account-category.service';
 import { AccountService } from '../../core/services/account.service';
@@ -21,9 +22,10 @@ import { DeleteDialogComponent } from '../delete-dialog/delete-dialog.component'
   templateUrl: './accounts.component.html',
   styleUrl: './accounts.component.css'
 })
-export class AccountsComponent implements OnInit {
-  accounts: FormattedAccount[] = [];
+export class AccountsComponent implements OnInit, OnDestroy {
+  activeAccounts: FormattedAccount[] = [];
   categories: AccountCategory[] = [];
+  private eventSubscription: Subscription = new Subscription();
 
   constructor(
     private accountService: AccountService,
@@ -35,74 +37,55 @@ export class AccountsComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    this.accounts = await this.formattedDataService.getFormattedAccounts();
+    this.activeAccounts = await this.formattedDataService.getFormattedAccounts(
+      true
+    );
     this.categories = await this.accountCategoryService.getAccountCategories();
 
-    this.globalEventService.events$.subscribe((event) => {
-      if (event.name === GlobalEvents.REFRESH_ACCOUNTS) {
-        this.refreshAccounts();
+    this.eventSubscription = this.globalEventService.events$.subscribe(
+      (event) => {
+        if (
+          event.name === GlobalEvents.REFRESH_ACCOUNTS ||
+          event.name === GlobalEvents.REFRESH_ENTRIES
+        ) {
+          this.refreshAccounts();
+        } else if (event.name === GlobalEvents.REFRESH_CATEGORIES) {
+          this.refreshCategories();
+        }
       }
-    });
+    );
+  }
 
-    this.globalEventService.events$.subscribe((event) => {
-      if (event.name === GlobalEvents.REFRESH_CATEGORIES) {
-        this.refreshCategories();
-      }
-    });
+  ngOnDestroy() {
+    if (this.eventSubscription) {
+      this.eventSubscription.unsubscribe();
+    }
   }
 
   getAssetCategories(): AccountCategory[] {
-    const assetAccountCategoryIds = [
-      ...new Set(
-        this.accounts
-          .filter((account) => account.type === 'Asset')
-          .map((account) => account.categoryId)
-      )
-    ];
-
-    return this.categories.filter((category) =>
-      assetAccountCategoryIds.includes(category.id!)
+    return this.categories.filter(
+      (category) =>
+        category.type === 'Asset' &&
+        this.activeAccounts.some(
+          (account) => account.categoryId === category.id
+        )
     );
   }
 
   getLiabilityCategories(): AccountCategory[] {
-    const liabilityAccountCategoryIds = [
-      ...new Set(
-        this.accounts
-          .filter((account) => account.type === 'Liability')
-          .map((account) => account.categoryId)
-      )
-    ];
-
-    return this.categories.filter((category) =>
-      liabilityAccountCategoryIds.includes(category.id!)
+    return this.categories.filter(
+      (category) =>
+        category.type === 'Liability' &&
+        this.activeAccounts.some(
+          (account) => account.categoryId === category.id
+        )
     );
   }
 
-  getAccountsByCategory(
-    categoryId: number | undefined,
-    type: 'Asset' | 'Liability'
-  ): FormattedAccount[] {
-    if (!categoryId) return [];
-    return this.accounts.filter(
-      (account) => account.categoryId === categoryId && account.type === type
+  getAccountsByCategory(categoryId: number): FormattedAccount[] {
+    return this.activeAccounts.filter(
+      (account) => account.categoryId === categoryId
     );
-  }
-
-  getAssetTotal(): number {
-    return this.accounts
-      .filter((account) => account.type === 'Asset')
-      .reduce((sum, account) => sum + account.balance, 0);
-  }
-
-  getLiabilityTotal(): number {
-    return this.accounts
-      .filter((account) => account.type === 'Liability')
-      .reduce((sum, account) => sum + account.balance, 0);
-  }
-
-  getNetWorth(): number {
-    return this.getAssetTotal() - this.getLiabilityTotal();
   }
 
   async openUpdateDialog(formattedAccount: FormattedAccount): Promise<void> {
@@ -131,7 +114,9 @@ export class AccountsComponent implements OnInit {
   }
 
   async refreshAccounts(): Promise<void> {
-    this.accounts = await this.formattedDataService.getFormattedAccounts();
+    this.activeAccounts = await this.formattedDataService.getFormattedAccounts(
+      true
+    );
   }
 
   async refreshCategories(): Promise<void> {

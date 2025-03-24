@@ -41,6 +41,20 @@ export class EntryService {
   }
 
   /**
+   *
+   * @param accountId
+   * @returns Returns the latest entry for the given account
+   */
+  async getLastEntry(accountId: number): Promise<Entry | null> {
+    const entries = await this.getEntries();
+    return entries
+      .filter((entry) => entry.accountId === accountId)
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )[0];
+  }
+
+  /**
    * Returns the account balance for the entry on the latest date
    * @param accountId
    * @returns

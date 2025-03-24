@@ -15,8 +15,12 @@ export class AccountService {
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
   }
 
+  /**
+   *
+   * @returns All accounts in alphabetical order
+   */
   async getAccounts(): Promise<Account[]> {
-    return await db.accounts.toArray();
+    return await db.accounts.orderBy('name').toArray();
   }
 
   /**

@@ -20,7 +20,7 @@
       <!-- Dynamic Account Columns -->
       <ng-container
         *ngFor="let account of accounts"
-        [matColumnDef]="account.toString()"
+        [matColumnDef]="account.id!.toString()"
       >
         <th mat-header-cell *matHeaderCellDef mat-sort-header>
           {{ account.name }} ({{ getAccountCategory(account.categoryId) }})

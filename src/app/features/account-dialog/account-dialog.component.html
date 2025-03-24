@@ -20,18 +20,6 @@
         </mat-error>
       </mat-form-field>
 
-      <!-- Account Type -->
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Account Type</mat-label>
-        <mat-select formControlName="type">
-          <mat-option value="Asset">Asset</mat-option>
-          <mat-option value="Liability">Liability</mat-option>
-        </mat-select>
-        <mat-error *ngIf="accountForm.get('type')?.invalid">
-          Account type is required
-        </mat-error>
-      </mat-form-field>
-
       <!-- Account Category -->
       <mat-form-field appearance="fill" class="full-width">
         <mat-label>Account Category</mat-label>

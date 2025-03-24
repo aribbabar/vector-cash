@@ -23,11 +23,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 
-import { Account } from '../../core/models/account.model';
-import { AccountService } from '../../core/services/account.service';
+import { AccountCategory } from '../../core/models/account-category.model';
+import { AccountCategoryService } from '../../core/services/account-category.service';
 import { EntryService } from '../../core/services/entry.service';
-import { FormattedEntry } from '../../core/services/formatted-data.service';
-import { GlobalEventService } from '../../core/services/global-event.service';
+import {
+  FormattedAccount,
+  FormattedDataService,
+  FormattedEntry
+} from '../../core/services/formatted-data.service';
 
 @Component({
   selector: 'app-entry-dialog',
@@ -49,13 +52,14 @@ import { GlobalEventService } from '../../core/services/global-event.service';
   styleUrl: './entry-dialog.component.css'
 })
 export class EntryDialogComponent implements OnInit {
-  accountsList: Account[] = []; // Renamed from accounts to avoid conflict
+  accountsList: FormattedAccount[] = []; // Renamed from accounts to avoid conflict
+  categories: AccountCategory[] = [];
   entryForm: FormGroup;
 
   constructor(
-    private globalEventService: GlobalEventService,
     private entryService: EntryService,
-    private accountService: AccountService,
+    private formattedDataService: FormattedDataService,
+    private accountCategoryService: AccountCategoryService,
     private formBuilder: FormBuilder,
     public dialogRef: MatDialogRef<EntryDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { entry: FormattedEntry }
@@ -73,50 +77,39 @@ export class EntryDialogComponent implements OnInit {
     });
   }
 
-  // Getter for the accounts FormArray
-  get accountsArray() {
-    return this.entryForm.get('accounts') as FormArray;
-  }
-
-  // Create a form group for each account
-  createAccountFormGroup(account: Account, balance?: number): FormGroup {
-    return this.formBuilder.group({
-      id: [account.id],
-      name: [account.name],
-      type: [account.type],
-      balance: [
-        balance,
-        [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]
-      ]
-    });
-  }
-
   async ngOnInit() {
     try {
-      // First get all accounts regardless of create or update mode
-      this.accountsList = await this.accountService.getActiveAccounts();
+      this.categories =
+        await this.accountCategoryService.getAccountCategories();
 
       if (this.data && this.data.entry) {
-        // Update logic - populate form with existing data
+        // Update logic - populate form with only the accounts from the entry
         const formattedEntry = this.data.entry;
 
-        // For each account in the system, check if it exists in the entry
+        // Use the accounts from the entry
+        this.accountsList = formattedEntry.accounts;
+
+        // Sort accounts by type (Assets first, then Liabilities) and then alphabetically
+        this.sortAccounts();
+
+        // Set the date from the entry
+        this.entryForm.get('date')?.setValue(new Date(formattedEntry.date));
+
+        // Populate the form with the entry accounts and their balances
         this.accountsList.forEach((account) => {
-          const entryAccount = formattedEntry.accounts.find(
-            (a) => a.id === account.id
+          this.accountsArray.push(
+            this.createAccountFormGroup(account, account.balance)
           );
-          if (entryAccount) {
-            // Account exists in this entry, use its balance
-            this.accountsArray.push(
-              this.createAccountFormGroup(account, entryAccount.balance)
-            );
-          } else {
-            // Account doesn't exist in this entry, use empty balance
-            this.accountsArray.push(this.createAccountFormGroup(account));
-          }
         });
       } else {
-        // Create logic - initialize form with all accounts but no balances
+        // Create logic - initialize form with all accounts
+        this.accountsList =
+          await this.formattedDataService.getFormattedAccounts(true);
+
+        // Sort accounts by type (Assets first, then Liabilities) and then alphabetically
+        this.sortAccounts();
+
+        // Initialize form with all active accounts but no balances
         this.accountsList.forEach((account) => {
           this.accountsArray.push(this.createAccountFormGroup(account));
         });
@@ -124,6 +117,26 @@ export class EntryDialogComponent implements OnInit {
     } catch (error) {
       console.error('Failed to load accounts:', error);
     }
+  }
+
+  // Getter for the accounts FormArray
+  get accountsArray() {
+    return this.entryForm.get('accounts') as FormArray;
+  }
+
+  // Create a form group for each account
+  createAccountFormGroup(
+    account: FormattedAccount,
+    balance?: number
+  ): FormGroup {
+    return this.formBuilder.group({
+      id: [account.id],
+      name: [account.name],
+      balance: [
+        balance,
+        [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]
+      ]
+    });
   }
 
   onCancel(): void {
@@ -178,7 +191,38 @@ export class EntryDialogComponent implements OnInit {
     }
   }
 
-  getAccountClass(account: Account): string {
-    return account.type === 'Asset' ? 'asset-account' : 'liability-account';
+  getCategoryType(account: FormattedAccount): string {
+    const category = this.categories.find(
+      (cat) => cat.id === account.categoryId
+    );
+
+    return category ? category.type : '';
+  }
+
+  getAccountClass(account: FormattedAccount): string {
+    const categoryType = this.getCategoryType(account);
+    return categoryType === 'Asset' ? 'asset-account' : 'liability-account';
+  }
+
+  /**
+   * Sorts accounts by category type (Assets first, then Liabilities) and then alphabetically by name
+   */
+  private sortAccounts(): void {
+    this.accountsList.sort((a, b) => {
+      // Get category types
+      const typeA = this.getCategoryType(a);
+      const typeB = this.getCategoryType(b);
+
+      // First sort by category type (Assets before Liabilities)
+      if (typeA === 'Asset' && typeB !== 'Asset') {
+        return -1;
+      }
+      if (typeA !== 'Asset' && typeB === 'Asset') {
+        return 1;
+      }
+
+      // Then sort alphabetically by account name
+      return a.name.localeCompare(b.name);
+    });
   }
 }
