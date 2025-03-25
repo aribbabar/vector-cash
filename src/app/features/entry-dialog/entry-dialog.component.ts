@@ -193,7 +193,7 @@ export class EntryDialogComponent implements OnInit {
 
   getCategoryType(account: FormattedAccount): string {
     const category = this.categories.find(
-      (cat) => cat.id === account.categoryId
+      (cat) => cat.id === account.category!.id
     );
 
     return category ? category.type : '';

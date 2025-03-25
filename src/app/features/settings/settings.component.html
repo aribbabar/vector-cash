@@ -1,0 +1,119 @@
+<div class="settings-container">
+  <h1>Settings</h1>
+
+  <mat-card>
+    <mat-tab-group animationDuration="0ms">
+      <!-- General Settings -->
+      <mat-tab label="General">
+        <div class="tab-content">
+          <h2>Appearance</h2>
+
+          <div class="setting-group">
+            <h3>Theme</h3>
+            <div class="theme-options">
+              <button
+                mat-raised-button
+                *ngFor="let theme of themeOptions"
+                [class.active]="theme === currentTheme"
+                (click)="changeTheme(theme)"
+              >
+                {{ theme | titlecase }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Account Settings -->
+      <mat-tab label="Accounts">
+        <div class="tab-content">
+          <h2>Account Management</h2>
+
+          <div class="setting-group">
+            <h3>Deleted Accounts</h3>
+
+            <div
+              class="deleted-accounts-list"
+              *ngIf="deletedAccounts.length > 0"
+            >
+              <mat-expansion-panel *ngFor="let account of deletedAccounts">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    {{ account.name }}
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    Deleted on {{ account.deletedDate | date }}
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div class="account-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="restoreAccount(account.id)"
+                  >
+                    <mat-icon>restore</mat-icon>
+                    Restore Account
+                  </button>
+                </div>
+              </mat-expansion-panel>
+            </div>
+
+            <div class="empty-state" *ngIf="deletedAccounts.length === 0">
+              <p>No deleted accounts available for restoration.</p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Database Settings -->
+      <mat-tab label="Database">
+        <div class="tab-content">
+          <h2>Data Management</h2>
+
+          <div class="setting-group">
+            <h3>Backup & Restore</h3>
+
+            <div class="action-buttons">
+              <button mat-raised-button color="primary" (click)="exportData()">
+                <mat-icon>cloud_download</mat-icon>
+                Export Data
+              </button>
+
+              <div class="file-upload">
+                <button mat-raised-button color="primary">
+                  <mat-icon>cloud_upload</mat-icon>
+                  Import Data
+                </button>
+                <input
+                  type="file"
+                  accept=".json"
+                  (change)="importData($event)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group danger-zone">
+            <h3>Danger Zone</h3>
+
+            <div class="action-buttons">
+              <button
+                mat-raised-button
+                color="warn"
+                (click)="confirmDatabaseDeletion()"
+              >
+                <mat-icon>delete_forever</mat-icon>
+                Delete All Data
+              </button>
+            </div>
+            <p class="warning-text">
+              This will permanently delete all your financial data, accounts,
+              transactions, and settings. This action cannot be undone.
+            </p>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>

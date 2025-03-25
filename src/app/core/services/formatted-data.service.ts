@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { AccountCategory } from '../models/account-category.model';
 import { AccountCategoryService } from './account-category.service';
 import { AccountService } from './account.service';
 import { EntryService } from './entry.service';
@@ -6,7 +7,7 @@ import { EntryService } from './entry.service';
 export interface FormattedAccount {
   id: number;
   name: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
-  categoryId: number;
+  category: AccountCategory | undefined;
   balance: number;
 }
 
@@ -50,6 +51,7 @@ export class FormattedDataService {
       // Get details for each account
       for (const accountId of accountIds) {
         const account = await this.accountService.getAccount(accountId);
+
         if (account) {
           // Calculate the balance for this account on this date
           const balance = entriesForDate
@@ -60,17 +62,11 @@ export class FormattedDataService {
             await this.accountCategoryService.getAccountCategory(
               account.categoryId
             );
-          const accountCategoryName = accountCategory
-            ? accountCategory.name
-            : '';
-          const accountCategoryType = accountCategory
-            ? accountCategory.type
-            : '';
 
           formattedAccounts.push({
             id: account.id!,
             name: account.name,
-            categoryId: account.categoryId,
+            category: accountCategory,
             balance: balance
           });
         }
@@ -133,7 +129,7 @@ export class FormattedDataService {
       formattedAccounts.push({
         id: account.id!,
         name: account.name,
-        categoryId: account.categoryId,
+        category: accountCategory,
         balance
       });
     }

@@ -1,0 +1,135 @@
+/*
+CSS Variables
+---- Common Colors ----
+--mat-sys-primary
+--mat-sys-surface
+--mat-sys-error
+--mat-sys-outline
+---- Alternative Theme Colors ----
+--mat-sys-primary-container
+--mat-sys-on-primary-container
+--mat-sys-secondary
+--mat-sys-on-secondary
+--mat-sys-secondary-container
+--mat-sys-on-secondary-container
+--mat-sys-tertiary
+--mat-sys-on-tertiary
+--mat-sys-tertiary-container
+--mat-sys-on-tertiary-container
+--mat-sys-error-container
+--mat-sys-on-error-container
+---- Surface Colors ----
+--mat-sys-surface-dim
+--mat-sys-surface-bright
+--mat-sys-surface-container-lowest
+--mat-sys-surface-container-low
+--mat-sys-surface-container
+--mat-sys-surface-container-high
+--mat-sys-surface-container-highest
+---- Fixed Colors ----
+--mat-sys-primary-fixed
+--mat-sys-on-primary-fixed
+--mat-sys-primary-fixed-dim
+--mat-sys-on-primary-fixed
+--mat-sys-secondary-fixed
+--mat-sys-on-secondary-fixed
+--mat-sys-secondary-fixed-dim
+--mat-sys-on-secondary-fixed
+--mat-sys-tertiary-fixed
+--mat-sys-on-tertiary-fixed
+--mat-sys-tertiary-fixed-dim
+--mat-sys-on-tertiary-fixed
+---- Typography (Body) ----
+--mat-sys-body-small
+--mat-sys-body-medium
+--mat-sys-body-large
+---- Typography (Display) ----
+--mat-sys-display-small
+--mat-sys-display-medium
+--mat-sys-display-large
+---- Typography (Headline) ----
+--mat-sys-headline-small
+--mat-sys-headline-medium
+--mat-sys-headline-large
+---- Typography (Label) ----
+--mat-sys-label-small
+--mat-sys-label-medium
+--mat-sys-label-large
+---- Typography (Title) ----
+--mat-sys-title-small
+--mat-sys-title-medium
+--mat-sys-title-large
+---- Elevation (box-shadow) ----
+--mat-sys-level0
+--mat-sys-level1
+--mat-sys-level2
+--mat-sys-level3
+--mat-sys-level4
+--mat-sys-level5
+*/
+
+@use "@angular/material" as mat;
+@use "./light-theme-colors.scss" as light-theme;
+@use "./dark-theme-colors.scss" as dark-theme;
+
+.light-theme {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: light-theme.$primary-palette,
+        // secondary: light-theme.$secondary-palette,
+        tertiary: light-theme.$tertiary-palette,
+        // neutral: light-theme.$neutral-palette,
+        // neutral-variant: light-theme.$neutral-variant-palette,
+        // error: light-theme.$error-palette
+      ),
+      typography: Roboto,
+      density: 0
+    )
+  );
+}
+
+.dark-theme {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: dark-theme.$primary-palette,
+        // secondary: dark-theme.$secondary-palette,
+        tertiary: dark-theme.$tertiary-palette,
+        // neutral: dark-theme.$neutral-palette,
+        // neutral-variant: dark-theme.$neutral-variant-palette,
+        // error: dark-theme.$error-palette
+      ),
+      typography: Roboto,
+      density: 0
+    )
+  );
+}
+
+html,
+body {
+  height: 100%;
+  cursor: default;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  margin: 0;
+}

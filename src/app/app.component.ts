@@ -5,6 +5,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -21,4 +22,6 @@ import { RouterModule } from '@angular/router';
 })
 export class AppComponent {
   title = 'vector_cash';
+
+  constructor(private themeService: ThemeService) {}
 }

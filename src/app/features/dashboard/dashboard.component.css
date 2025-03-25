@@ -21,45 +21,38 @@
   border-radius: 12px;
   border-left: 6px solid transparent;
   min-height: 140px;
+  background-color: var(--mat-sys-surface-container-low);
+  box-shadow: var(--mat-sys-level1);
 }
 
 .summary-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--mat-sys-level3);
 }
 
+/* Asset card */
 .summary-card:nth-child(1) {
-  background: linear-gradient(
-    135deg,
-    rgba(46, 204, 113, 0.1),
-    rgba(46, 204, 113, 0.05)
-  );
-  border-left-color: #2ecc71;
+  border-left-color: var(--mat-sys-tertiary);
+  background-color: var(--mat-sys-tertiary-container);
 }
 
+/* Liability card */
 .summary-card:nth-child(2) {
-  background: linear-gradient(
-    135deg,
-    rgba(231, 76, 60, 0.1),
-    rgba(231, 76, 60, 0.05)
-  );
-  border-left-color: #e74c3c;
+  border-left-color: var(--mat-sys-error);
+  background-color: var(--mat-sys-error-container);
 }
 
+/* Net worth card */
 .summary-card:nth-child(3) {
-  background: linear-gradient(
-    135deg,
-    rgba(52, 152, 219, 0.1),
-    rgba(52, 152, 219, 0.05)
-  );
-  border-left-color: #3498db;
+  border-left-color: var(--mat-sys-primary);
+  background-color: var(--mat-sys-primary-container);
 }
 
 .summary-card mat-card-title {
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 16px;
-  color: rgba(0, 0, 0, 0.75);
+  color: var(--mat-sys-on-surface-variant);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -71,15 +64,15 @@
 }
 
 .summary-card:nth-child(1) h2 {
-  color: #27ae60;
+  color: var(--mat-sys-on-tertiary-container);
 }
 
 .summary-card:nth-child(2) h2 {
-  color: #c0392b;
+  color: var(--mat-sys-on-error-container);
 }
 
 .summary-card:nth-child(3) h2 {
-  color: #2980b9;
+  color: var(--mat-sys-on-primary-container);
 }
 
 @media (max-width: 768px) {
@@ -123,11 +116,16 @@
   font-weight: 500;
   border-radius: 8px;
   transition: transform 0.2s, box-shadow 0.2s;
+  background-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  box-shadow: var(--mat-sys-level1);
 }
 
 .action-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--mat-sys-level2);
+  background-color: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
 }
 
 @media (max-width: 768px) {

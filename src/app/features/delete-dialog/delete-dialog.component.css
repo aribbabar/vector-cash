@@ -1,13 +1,13 @@
 .delete-dialog-content {
   padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: white;
+  box-shadow: var(--mat-sys-level2);
+  background-color: var(--mat-sys-surface-container);
 }
 
 .delete-dialog-title {
   margin: 0 0 16px 0;
-  color: #333;
+  color: var(--mat-sys-on-surface);
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -19,11 +19,11 @@
 .delete-dialog-message p {
   margin: 8px 0;
   font-size: 1rem;
-  color: #4a4a4a;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .warning {
-  color: #e53935;
+  color: var(--mat-sys-error);
   font-weight: 500;
 }
 
@@ -48,19 +48,20 @@ button:hover {
 }
 
 .btn-cancel {
-  background-color: #e0e0e0;
-  color: #333;
+  background-color: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
 }
 
 .btn-cancel:hover {
-  background-color: #d5d5d5;
+  background-color: var(--mat-sys-surface-container-highest);
 }
 
 .btn-delete {
-  background-color: #f44336;
-  color: white;
+  background-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
 }
 
 .btn-delete:hover {
-  background-color: #e53935;
+  background-color: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
 }

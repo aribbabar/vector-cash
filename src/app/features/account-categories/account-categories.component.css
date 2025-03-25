@@ -7,8 +7,8 @@
 .account-categories-container h2 {
   margin-bottom: 24px;
   font-size: 1.8rem;
-  color: #333;
-  border-bottom: 2px solid #f0f0f0;
+  color: var(--mat-sys-on-surface);
+  border-bottom: 2px solid var(--mat-sys-outline);
   padding-bottom: 12px;
 }
 
@@ -23,42 +23,45 @@
   transition: transform 0.2s, box-shadow 0.2s;
   border-radius: 8px;
   overflow: hidden;
-  border-left: 4px solid #3f51b5; /* Default border color */
+  border-left: 4px solid var(--mat-sys-primary); /* Default border color */
+  background-color: var(--mat-sys-surface-container);
+  box-shadow: var(--mat-sys-level1);
 }
 
 /* Asset category - green border */
 .asset-category {
-  border-left: 4px solid #4caf50; /* Green border for assets */
+  border-left: 4px solid var(--mat-sys-tertiary); /* Green border for assets */
 }
 
 /* Liability category - red border */
 .liability-category {
-  border-left: 4px solid #f44336; /* Red border for liabilities */
+  border-left: 4px solid var(--mat-sys-error); /* Red border for liabilities */
 }
 
 .category-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--mat-sys-level3);
 }
 
 .mat-card-header {
-  background-color: #f7f7f7;
+  background-color: var(--mat-sys-surface-container-high);
   padding-top: 16px;
 }
 
 .mat-card-title {
   font-size: 1.2rem;
   font-weight: 500;
+  color: var(--mat-sys-on-surface);
 }
 
 .mat-card-subtitle {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--mat-sys-on-surface-variant, #666);
 }
 
 .mat-card-content {
   padding: 16px;
-  color: #555;
+  color: var(--mat-sys-on-surface-variant, #555);
 }
 
 .mat-card-actions {
@@ -80,16 +83,16 @@
   justify-content: center;
   margin-top: 60px;
   text-align: center;
-  background-color: #f9f9f9;
+  background-color: var(--mat-sys-surface-container-low);
   padding: 40px;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--mat-sys-level1);
 }
 
 .no-categories p {
   margin-bottom: 24px;
   font-size: 1.2rem;
-  color: #666;
+  color: var(--mat-sys-on-surface-variant, #666);
 }
 
 .no-categories button {

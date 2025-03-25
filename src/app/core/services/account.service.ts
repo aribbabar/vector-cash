@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Account } from '../models/account.model';
 import { GlobalEvents } from '../utils/global-events';
+import { AccountCategoryService } from './account-category.service';
 import db from './database.service';
 import { GlobalEventService } from './global-event.service';
 
@@ -8,7 +9,10 @@ import { GlobalEventService } from './global-event.service';
   providedIn: 'root'
 })
 export class AccountService {
-  constructor(private globalEventService: GlobalEventService) {}
+  constructor(
+    private globalEventService: GlobalEventService,
+    private accountCategoryService: AccountCategoryService
+  ) {}
 
   async addAccount(account: Account) {
     await db.accounts.add(account);

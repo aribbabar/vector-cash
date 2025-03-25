@@ -15,6 +15,7 @@ import { AccountCategoriesComponent } from '../account-categories/account-catego
 import { AccountCategoryDialogComponent } from '../account-category-dialog/account-category-dialog.component';
 import { AccountDialogComponent } from '../account-dialog/account-dialog.component';
 import { AccountsComponent } from '../accounts/accounts.component';
+import { ChartComponent } from '../chart/chart.component';
 import { EntriesComponent } from '../entries/entries.component';
 import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 
@@ -30,7 +31,8 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
     EntriesComponent,
     AccountsComponent,
     AccountCategoriesComponent,
-    AccountCategoriesComponent
+    AccountCategoriesComponent,
+    ChartComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -70,7 +72,7 @@ export class DashboardComponent implements OnInit {
     this.assetsTotal = this.activeAccounts
       .filter((account) => {
         const category = this.categories.find(
-          (cat) => cat.id === account.categoryId
+          (cat) => cat.id === account.category!.id
         );
         return category?.type === 'Asset';
       })
@@ -80,7 +82,7 @@ export class DashboardComponent implements OnInit {
     this.liabilitiesTotal = this.activeAccounts
       .filter((account) => {
         const category = this.categories.find(
-          (cat) => cat.id === account.categoryId
+          (cat) => cat.id === account.category!.id
         );
         return category?.type === 'Liability';
       })

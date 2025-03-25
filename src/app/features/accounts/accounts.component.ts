@@ -67,7 +67,7 @@ export class AccountsComponent implements OnInit, OnDestroy {
       (category) =>
         category.type === 'Asset' &&
         this.activeAccounts.some(
-          (account) => account.categoryId === category.id
+          (account) => account.category!.id === category.id
         )
     );
   }
@@ -77,14 +77,14 @@ export class AccountsComponent implements OnInit, OnDestroy {
       (category) =>
         category.type === 'Liability' &&
         this.activeAccounts.some(
-          (account) => account.categoryId === category.id
+          (account) => account.category!.id === category.id
         )
     );
   }
 
   getAccountsByCategory(categoryId: number): FormattedAccount[] {
     return this.activeAccounts.filter(
-      (account) => account.categoryId === categoryId
+      (account) => account.category!.id === categoryId
     );
   }
 
