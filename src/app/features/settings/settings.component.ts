@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -8,7 +8,21 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { AccountCategory } from '../../core/models/account-category.model';
+import { Account } from '../../core/models/account.model';
+import { Entry } from '../../core/models/entry.model';
+import { AccountCategoryService } from '../../core/services/account-category.service';
+import { AccountService } from '../../core/services/account.service';
+import { DatabaseService } from '../../core/services/database.service';
+import { EntryService } from '../../core/services/entry.service';
 import { Theme, ThemeService } from '../../core/services/theme.service';
+import { DeleteDialogComponent } from '../delete-dialog/delete-dialog.component';
+
+interface ImportExportData {
+  entries: Entry[];
+  accounts: Account[];
+  accountCategories: AccountCategory[];
+}
 
 @Component({
   selector: 'app-settings',
@@ -28,56 +42,81 @@ import { Theme, ThemeService } from '../../core/services/theme.service';
   styleUrl: './settings.component.css'
 })
 export class SettingsComponent {
-  deletedAccounts: any[] = []; // Replace with your actual account interface
+  entries: Entry[] = [];
+  accounts: Account[] = [];
+  accountCategories: AccountCategory[] = [];
+  inactiveAccounts: Account[] = [];
+  inactiveAccountCategories: AccountCategory[] = [];
   themeOptions = ['light', 'dark', 'system'];
   currentTheme = 'system';
 
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   constructor(
+    private databaseService: DatabaseService,
+    private entryService: EntryService,
+    private accountService: AccountService,
+    private accountCategoryService: AccountCategoryService,
     private themeService: ThemeService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
-  ) {
-    // Load deleted accounts - replace with your actual service
-    this.loadDeletedAccounts();
+  ) {}
+
+  async ngOnInit(): Promise<void> {
+    this.inactiveAccounts = await this.accountService.getInactiveAccounts();
+    this.inactiveAccountCategories =
+      await this.accountCategoryService.getInactiveAccountCategories();
 
     // Get current theme
     this.themeService.theme$.subscribe((theme) => {
       this.currentTheme = theme;
     });
+
+    this.entries = await this.entryService.getEntries();
+    this.accounts = await this.accountService.getAccounts();
+    this.accountCategories =
+      await this.accountCategoryService.getAccountCategories();
   }
 
-  loadDeletedAccounts(): void {
-    // Mock data - replace with actual service call
-    this.deletedAccounts = [
-      { id: 1, name: 'Checking Account', deletedDate: new Date() },
-      {
-        id: 2,
-        name: 'Savings Account',
-        deletedDate: new Date(Date.now() - 86400000)
-      }
-    ];
+  async restoreAccount(accountId: number): Promise<void> {
+    try {
+      await this.accountService.restoreAccount(accountId);
+      this.inactiveAccounts = this.inactiveAccounts.filter(
+        (account) => account.id !== accountId
+      );
+
+      this.snackBar.open('Account restored successfully', 'Close', {
+        duration: 3000
+      });
+    } catch (error) {
+      console.error('Error restoring account:', error);
+      this.snackBar.open((error as Error).message, 'Close', {
+        duration: 3000
+      });
+    }
   }
 
-  restoreAccount(accountId: number): void {
-    // Implement account restoration logic
-    console.log('Restoring account:', accountId);
-    this.snackBar.open('Account restored successfully', 'Close', {
+  restoreCategory(categoryId: number): void {
+    this.accountCategoryService.setAccountCategoryActiveStatus(
+      categoryId,
+      true
+    );
+    this.inactiveAccountCategories = this.inactiveAccountCategories.filter(
+      (category) => category.id !== categoryId
+    );
+
+    this.snackBar.open('Category restored successfully', 'Close', {
       duration: 3000
     });
-    // Remove from deleted accounts list
-    this.deletedAccounts = this.deletedAccounts.filter(
-      (acc) => acc.id !== accountId
-    );
   }
 
   exportData(): void {
-    // Implement data export logic
-    console.log('Exporting data');
-
-    // Mock implementation
-    const data = {
-      /* your app data */
+    const data: ImportExportData = {
+      entries: this.entries,
+      accounts: this.accounts,
+      accountCategories: this.accountCategories
     };
+
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
 
@@ -96,6 +135,10 @@ export class SettingsComponent {
     });
   }
 
+  triggerFileInput(): void {
+    this.fileInput.nativeElement.click();
+  }
+
   importData(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -103,20 +146,43 @@ export class SettingsComponent {
       const reader = new FileReader();
 
       reader.onload = () => {
+        console.log(JSON.parse(reader.result as string));
         try {
-          const importedData = JSON.parse(reader.result as string);
-          // Process imported data
-          console.log('Importing data:', importedData);
+          const importedData: ImportExportData = JSON.parse(
+            reader.result as string
+          );
+
+          if (
+            this.entries.length > 0 ||
+            this.accounts.length > 0 ||
+            this.accountCategories.length > 0
+          ) {
+            throw new Error(
+              'Data already exists. Please delete existing data before importing.'
+            );
+          }
+
+          for (const entry of importedData.entries) {
+            this.entryService.addEntry(entry);
+          }
+
+          for (const account of importedData.accounts) {
+            this.accountService.addAccount(account);
+          }
+
+          for (const accountCategory of importedData.accountCategories) {
+            this.accountCategoryService.addAccountCategory(accountCategory);
+          }
+
           this.snackBar.open('Data imported successfully', 'Close', {
             duration: 3000
           });
         } catch (error) {
+          input.value = '';
           console.error('Error parsing imported data:', error);
-          this.snackBar.open(
-            'Error importing data. Invalid file format.',
-            'Close',
-            { duration: 3000 }
-          );
+          this.snackBar.open((error as Error).message, 'Close', {
+            duration: 3000
+          });
         }
       };
 
@@ -125,19 +191,25 @@ export class SettingsComponent {
   }
 
   confirmDatabaseDeletion(): void {
-    if (
-      confirm(
-        'Are you sure you want to delete all data? This action cannot be undone.'
-      )
-    ) {
-      this.deleteDatabase();
-    }
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      data: {
+        title: 'Delete Database',
+        message: `Are you sure you want to delete the database?`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.deleteDatabase();
+      }
+    });
   }
 
   deleteDatabase(): void {
-    // Implement database deletion logic
-    console.log('Deleting database');
-    // Clear local storage or call your service method
+    this.databaseService.deleteDatabase();
+
     this.snackBar.open('All data has been deleted', 'Close', {
       duration: 3000
     });

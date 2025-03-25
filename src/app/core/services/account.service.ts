@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Account } from '../models/account.model';
 import { GlobalEvents } from '../utils/global-events';
 import { AccountCategoryService } from './account-category.service';
-import db from './database.service';
+import { DatabaseService } from './database.service';
 import { GlobalEventService } from './global-event.service';
 
 @Injectable({
@@ -10,12 +10,13 @@ import { GlobalEventService } from './global-event.service';
 })
 export class AccountService {
   constructor(
-    private globalEventService: GlobalEventService,
-    private accountCategoryService: AccountCategoryService
+    private databaseService: DatabaseService,
+    private accountCategoryService: AccountCategoryService,
+    private globalEventService: GlobalEventService
   ) {}
 
   async addAccount(account: Account) {
-    await db.accounts.add(account);
+    await this.databaseService.accounts.add(account);
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
   }
 
@@ -24,7 +25,7 @@ export class AccountService {
    * @returns All accounts in alphabetical order
    */
   async getAccounts(): Promise<Account[]> {
-    return await db.accounts.orderBy('name').toArray();
+    return await this.databaseService.accounts.orderBy('name').toArray();
   }
 
   /**
@@ -32,12 +33,21 @@ export class AccountService {
    * @returns All active accounts
    */
   async getActiveAccounts(): Promise<Account[]> {
-    const accounts = await db.accounts.toArray();
+    const accounts = await this.databaseService.accounts.toArray();
     return accounts.filter((account) => account.isActive);
   }
 
+  /**
+   *
+   * @returns All inactive accounts
+   */
+  async getInactiveAccounts(): Promise<Account[]> {
+    const accounts = await this.databaseService.accounts.toArray();
+    return accounts.filter((account) => !account.isActive);
+  }
+
   async getAccount(id: number): Promise<Account> {
-    const account = await db.accounts.get(id);
+    const account = await this.databaseService.accounts.get(id);
 
     if (!account) {
       throw new Error('Account not found');
@@ -52,7 +62,7 @@ export class AccountService {
    * @returns If there are active accounts in the category
    */
   async hasActiveAccountsInCategory(categoryId: number): Promise<boolean> {
-    const accounts = await db.accounts
+    const accounts = await this.databaseService.accounts
       .where('categoryId')
       .equals(categoryId)
       .toArray();
@@ -60,12 +70,31 @@ export class AccountService {
   }
 
   async updateAccount(account: Account) {
-    await db.accounts.update(account.id!, account);
+    await this.databaseService.accounts.update(account.id!, account);
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
   }
 
-  async deleteAccount(id: number) {
-    await db.accounts.delete(id);
+  async deactivateAccount(id: number) {
+    const account = await this.getAccount(id);
+    account.isActive = false;
+    await this.updateAccount(account);
+  }
+
+  async restoreAccount(id: number) {
+    const account = await this.getAccount(id);
+    const accountCategory =
+      await this.accountCategoryService.getAccountCategory(account.categoryId);
+
+    if (accountCategory && !accountCategory.isActive) {
+      throw new Error('Cannot restore account because category is inactive');
+    }
+
+    account.isActive = true;
+    await this.updateAccount(account);
+  }
+
+  async deleteAllAccounts() {
+    await this.databaseService.accounts.clear();
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
   }
 }

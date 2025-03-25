@@ -34,23 +34,20 @@
 
             <div
               class="deleted-accounts-list"
-              *ngIf="deletedAccounts.length > 0"
+              *ngIf="inactiveAccounts.length > 0"
             >
-              <mat-expansion-panel *ngFor="let account of deletedAccounts">
+              <mat-expansion-panel *ngFor="let account of inactiveAccounts">
                 <mat-expansion-panel-header>
                   <mat-panel-title>
                     {{ account.name }}
                   </mat-panel-title>
-                  <mat-panel-description>
-                    Deleted on {{ account.deletedDate | date }}
-                  </mat-panel-description>
                 </mat-expansion-panel-header>
 
                 <div class="account-actions">
                   <button
                     mat-raised-button
                     color="primary"
-                    (click)="restoreAccount(account.id)"
+                    (click)="restoreAccount(account.id!)"
                   >
                     <mat-icon>restore</mat-icon>
                     Restore Account
@@ -59,8 +56,45 @@
               </mat-expansion-panel>
             </div>
 
-            <div class="empty-state" *ngIf="deletedAccounts.length === 0">
+            <div class="empty-state" *ngIf="inactiveAccounts.length === 0">
               <p>No deleted accounts available for restoration.</p>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h3>Deleted Categories</h3>
+
+            <div
+              class="deleted-categories-list"
+              *ngIf="inactiveAccountCategories.length > 0"
+            >
+              <mat-expansion-panel
+                *ngFor="let category of inactiveAccountCategories"
+              >
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    {{ category.name }}
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+
+                <div class="account-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="restoreCategory(category.id!)"
+                  >
+                    <mat-icon>restore</mat-icon>
+                    Restore Category
+                  </button>
+                </div>
+              </mat-expansion-panel>
+            </div>
+
+            <div
+              class="empty-state"
+              *ngIf="inactiveAccountCategories.length === 0"
+            >
+              <p>No deleted categories available for restoration.</p>
             </div>
           </div>
         </div>
@@ -81,11 +115,16 @@
               </button>
 
               <div class="file-upload">
-                <button mat-raised-button color="primary">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="triggerFileInput()"
+                >
                   <mat-icon>cloud_upload</mat-icon>
                   Import Data
                 </button>
                 <input
+                  #fileInput
                   type="file"
                   accept=".json"
                   (change)="importData($event)"

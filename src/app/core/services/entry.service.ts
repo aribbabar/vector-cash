@@ -1,26 +1,29 @@
 import { Injectable } from '@angular/core';
 import { Entry } from '../models/entry.model';
 import { GlobalEvents } from '../utils/global-events';
-import db from './database.service';
+import { DatabaseService } from './database.service';
 import { GlobalEventService } from './global-event.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EntryService {
-  constructor(private globalEventService: GlobalEventService) {}
+  constructor(
+    private databaseService: DatabaseService,
+    private globalEventService: GlobalEventService
+  ) {}
 
   async addEntry(entry: Entry) {
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
-    await db.entries.add(entry);
+    await this.databaseService.entries.add(entry);
   }
 
   async getEntries(): Promise<Entry[]> {
-    return await db.entries.toArray();
+    return await this.databaseService.entries.toArray();
   }
 
   async getEntriesTotal(): Promise<number> {
-    return await db.entries.count();
+    return await this.databaseService.entries.count();
   }
 
   async getEntryByAccountAndDate(
@@ -76,7 +79,10 @@ export class EntryService {
    * @returns
    */
   async entryExists(date: string): Promise<boolean> {
-    return (await db.entries.where('date').equals(date).count()) > 0;
+    return (
+      (await this.databaseService.entries.where('date').equals(date).count()) >
+      0
+    );
   }
 
   async updateEntry(entry: Entry) {
@@ -84,12 +90,12 @@ export class EntryService {
       throw new Error('Cannot update an entry without an ID');
     }
 
-    await db.entries.update(entry.id, entry);
+    await this.databaseService.entries.update(entry.id, entry);
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
   }
 
   async deleteEntry(id: number) {
-    await db.entries.delete(id);
+    await this.databaseService.entries.delete(id);
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
   }
 
@@ -98,7 +104,12 @@ export class EntryService {
    * @param date MM/DD/YYYY
    */
   async deleteEntries(date: string) {
-    await db.entries.where('date').equals(date).delete();
+    await this.databaseService.entries.where('date').equals(date).delete();
+    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
+  }
+
+  async deleteAllEntries() {
+    await this.databaseService.entries.clear();
     this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
   }
 }

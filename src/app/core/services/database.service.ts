@@ -1,10 +1,14 @@
+import { Injectable } from '@angular/core';
 import Dexie, { Table } from 'dexie';
 import { AccountCategory } from '../models/account-category.model';
 import { Account } from '../models/account.model';
 import { Entry } from '../models/entry.model';
 import { SeedDataGenerator } from '../utils/seed-data-generator';
 
-export class VectorCashDatabase extends Dexie {
+@Injectable({
+  providedIn: 'root'
+})
+export class DatabaseService extends Dexie {
   accounts!: Table<Account, number>;
   accountCategories!: Table<AccountCategory, number>;
   entries!: Table<Entry, number>;
@@ -53,7 +57,8 @@ export class VectorCashDatabase extends Dexie {
     const entries = SeedDataGenerator.generateEntries();
     await this.entries.bulkAdd(entries);
   }
-}
 
-const db = new VectorCashDatabase();
-export default db;
+  async deleteDatabase() {
+    await this.delete();
+  }
+}
