@@ -47,9 +47,8 @@ export class AccountCategoriesComponent implements OnInit {
   }
 
   openAddCategoryDialog(): void {
-    const dialogRef = this.dialog.open(AccountCategoryDialogComponent, {
-      width: '400px',
-      data: { category: {} as AccountCategory }
+    this.dialog.open(AccountCategoryDialogComponent, {
+      width: '400px'
     });
   }
 

@@ -3,22 +3,11 @@
   flex-direction: column;
   min-width: 350px;
   max-width: 500px;
-  background-color: var(--mat-sys-surface-container);
   border-radius: 8px;
-  box-shadow: var(--mat-sys-level1);
 }
 
 .full-width {
   width: 100%;
-  margin-bottom: 15px;
-  color: var(--mat-sys-on-surface);
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-  color: var(--mat-sys-primary);
 }
 
 .checkbox-field {

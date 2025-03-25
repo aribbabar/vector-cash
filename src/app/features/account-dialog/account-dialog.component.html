@@ -1,11 +1,7 @@
 <h2 mat-dialog-title>{{ isUpdate ? "Update Account" : "Create Account" }}</h2>
 
 <div mat-dialog-content>
-  <div *ngIf="isLoading" class="loading">
-    <p>Loading...</p>
-  </div>
-
-  <form [formGroup]="accountForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading">
+  <form [formGroup]="accountForm" (ngSubmit)="onSubmit()">
     <div class="form-container">
       <!-- Account Name -->
       <mat-form-field appearance="fill" class="full-width">
@@ -15,18 +11,20 @@
           formControlName="name"
           placeholder="e.g. Chase Checking"
         />
-        <mat-error *ngIf="accountForm.get('name')?.invalid">
-          Account name is required
-        </mat-error>
+        @if (accountForm.get("name")?.invalid) {
+          <mat-error> Account name is required </mat-error>
+        }
       </mat-form-field>
 
       <!-- Account Category -->
       <mat-form-field appearance="fill" class="full-width">
         <mat-label>Account Category</mat-label>
         <mat-select formControlName="categoryId">
-          <mat-option *ngFor="let category of categories" [value]="category.id">
-            {{ category.name }}
-          </mat-option>
+          @for (category of categories; track category) {
+            <mat-option [value]="category.id">
+              {{ category.name }}
+            </mat-option>
+          }
         </mat-select>
         <mat-error *ngIf="accountForm.get('categoryId')?.invalid">
           Account category is required
@@ -38,12 +36,7 @@
 
 <div mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button
-    mat-raised-button
-    color="primary"
-    [disabled]="accountForm.invalid || isLoading"
-    (click)="onSubmit()"
-  >
+  <button mat-raised-button color="primary" (click)="onSubmit()">
     {{ isUpdate ? "Update" : "Create" }}
   </button>
 </div>

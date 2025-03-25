@@ -42,7 +42,6 @@ import { AccountService } from '../../core/services/account.service';
 export class AccountDialogComponent implements OnInit {
   accountForm: FormGroup;
   categories: AccountCategory[] = [];
-  isLoading = false;
   isUpdate = false;
 
   constructor(
@@ -72,7 +71,6 @@ export class AccountDialogComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      this.isLoading = true;
       this.categories =
         await this.accountCategoryService.getActiveAccountCategories();
     } catch (error) {
@@ -80,8 +78,6 @@ export class AccountDialogComponent implements OnInit {
       this.snackBar.open('Failed to load account categories', 'Dismiss', {
         duration: 5000
       });
-    } finally {
-      this.isLoading = false;
     }
   }
 
@@ -94,7 +90,6 @@ export class AccountDialogComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
     try {
       const formValues = this.accountForm.value;
       const account: Account = {
@@ -114,13 +109,10 @@ export class AccountDialogComponent implements OnInit {
         this.snackBar.open('Account created', 'Dismiss', { duration: 5000 });
       }
 
-      // Trigger global event to refresh accounts
       this.dialogRef.close(true);
     } catch (error) {
       console.error('Error saving account:', error);
       this.snackBar.open('Error saving account', 'Dismiss', { duration: 5000 });
-    } finally {
-      this.isLoading = false;
     }
   }
 }

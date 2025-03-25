@@ -5,10 +5,15 @@
     <div>
       <mat-form-field appearance="fill">
         <mat-label>Name</mat-label>
-        <input matInput formControlName="name" required />
-        <mat-error *ngIf="categoryForm.get('name')?.errors?.['required']">
-          Name is required
-        </mat-error>
+        <input
+          matInput
+          formControlName="name"
+          placeholder="e.g. Credit Card"
+          required
+        />
+        @if (categoryForm.get("name")?.errors?.["required"]) {
+          <mat-error> Name is required </mat-error>
+        }
       </mat-form-field>
     </div>
 
@@ -19,9 +24,9 @@
           <mat-option value="Asset">Asset</mat-option>
           <mat-option value="Liability">Liability</mat-option>
         </mat-select>
-        <mat-error *ngIf="categoryForm.get('type')?.errors?.['required']">
-          Type is required
-        </mat-error>
+        @if (categoryForm.get("type")?.errors?.["required"]) {
+          <mat-error> Type is required </mat-error>
+        }
       </mat-form-field>
     </div>
 
@@ -42,7 +47,11 @@
       type="submit"
       [disabled]="categoryForm.invalid"
     >
-      {{ isEditMode ? "Update" : "Create" }}
+      @if (isEditMode) {
+        Update
+      } @else {
+        Create
+      }
     </button>
   </div>
 </form>
