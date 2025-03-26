@@ -1,0 +1,21 @@
+<div class="not-found-container">
+  <div class="not-found-content">
+    <div class="error-code">404</div>
+    <h1>Page Not Found</h1>
+    <p class="message">Sorry, we couldn't find the page you're looking for.</p>
+    <p class="suggestion">
+      The page might have been removed, renamed, or is temporarily unavailable.
+    </p>
+
+    <div class="actions">
+      <button mat-raised-button color="primary" routerLink="/">
+        <mat-icon>home</mat-icon>
+        Return to Home
+      </button>
+      <button mat-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Go Back
+      </button>
+    </div>
+  </div>
+</div>

@@ -26,7 +26,7 @@ export class DatabaseService extends Dexie {
     this.accounts.mapToClass(Account);
     this.entries.mapToClass(Entry);
 
-    this.seedDatabase();
+    // this.seedDatabase();
   }
 
   async seedDatabase() {

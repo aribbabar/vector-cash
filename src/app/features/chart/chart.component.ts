@@ -28,6 +28,7 @@ interface FinancialData {
 })
 export class ChartComponent implements AfterViewInit, OnDestroy {
   @ViewChild('chartContainer') private chartContainer!: ElementRef;
+  @ViewChild('tooltip') private tooltip!: ElementRef;
 
   entries: FormattedEntry[] = [];
   financialData: FinancialData[] = [];
@@ -220,6 +221,151 @@ export class ChartComponent implements AfterViewInit, OnDestroy {
           }).format(d);
         })
       );
+
+    // Create a formatter for currency
+    const currencyFormatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+
+    // Create a date formatter
+    const dateFormatter = d3.timeFormat('%b %d, %Y');
+
+    // Create a bisector for finding closest date
+    const bisect = d3.bisector<FinancialData, Date>((d) => d.date).left;
+
+    // Create a focus/hover group
+    const focus = this.svg
+      .append('g')
+      .attr('class', 'focus')
+      .style('display', 'none');
+
+    // Add the circles for each line
+    focus
+      .append('circle')
+      .attr('class', 'assets-circle')
+      .attr('r', 5)
+      .attr('fill', 'var(--mat-sys-tertiary)');
+
+    focus
+      .append('circle')
+      .attr('class', 'liabilities-circle')
+      .attr('r', 5)
+      .attr('fill', 'var(--mat-sys-error)');
+
+    focus
+      .append('circle')
+      .attr('class', 'networth-circle')
+      .attr('r', 5)
+      .attr('fill', 'var(--mat-sys-primary)');
+
+    // Add a vertical line at the focus point
+    focus
+      .append('line')
+      .attr('class', 'focus-line')
+      .attr('y1', 0)
+      .attr('y2', this.height)
+      .attr('stroke', '#888')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3');
+
+    // Create transparent overlay to capture mouse events
+    this.svg
+      .append('rect')
+      .attr('class', 'overlay')
+      .attr('width', this.width)
+      .attr('height', this.height)
+      .style('opacity', 0)
+      .on('mouseover', () => {
+        focus.style('display', null);
+        d3.select(this.tooltip.nativeElement).style('display', null);
+      })
+      .on('mouseout', () => {
+        focus.style('display', 'none');
+        d3.select(this.tooltip.nativeElement).style('display', 'none');
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        const mouseX = d3.pointer(event)[0];
+        const x0 = x.invert(mouseX);
+        const i = bisect(this.filteredData, x0, 1);
+
+        // Handle edge case
+        if (i >= this.filteredData.length) return;
+
+        const d0 = this.filteredData[i - 1];
+        const d1 = this.filteredData[i];
+
+        // Find the closer data point
+        const d =
+          x0.getTime() - d0.date.getTime() > d1.date.getTime() - x0.getTime()
+            ? d1
+            : d0;
+
+        // Update circle positions
+        focus
+          .select('.assets-circle')
+          .attr('cx', x(d.date))
+          .attr('cy', y(d.assetsTotal));
+
+        focus
+          .select('.liabilities-circle')
+          .attr('cx', x(d.date))
+          .attr('cy', y(d.liabilitiesTotal));
+
+        focus
+          .select('.networth-circle')
+          .attr('cx', x(d.date))
+          .attr('cy', y(d.netWorth));
+
+        // Update vertical line
+        focus.select('.focus-line').attr('x1', x(d.date)).attr('x2', x(d.date));
+
+        // Update tooltip content
+        const tooltipEl = d3.select(this.tooltip.nativeElement);
+        tooltipEl.select('.tooltip-date').text(dateFormatter(d.date));
+        tooltipEl
+          .select('.tooltip-value.assets span')
+          .text(currencyFormatter.format(d.assetsTotal));
+        tooltipEl
+          .select('.tooltip-value.liabilities span')
+          .text(currencyFormatter.format(d.liabilitiesTotal));
+        tooltipEl
+          .select('.tooltip-value.net-worth span')
+          .text(currencyFormatter.format(d.netWorth));
+
+        // Position tooltip to follow mouse cursor
+        const tooltipWidth = this.tooltip.nativeElement.offsetWidth;
+        const tooltipHeight = this.tooltip.nativeElement.offsetHeight;
+
+        // Get mouse position relative to the page
+        const mouseLeft = event.clientX;
+        const mouseTop = event.clientY;
+
+        // Default position - to the right of cursor
+        let tooltipLeft = mouseLeft + 20;
+        let tooltipTop = mouseTop - tooltipHeight / 2;
+
+        // Adjust if tooltip would extend beyond right edge of window
+        if (tooltipLeft + tooltipWidth > window.innerWidth) {
+          tooltipLeft = mouseLeft - tooltipWidth - 10; // Position to the left of cursor
+        }
+
+        // Adjust if tooltip would extend beyond bottom edge of window
+        if (tooltipTop + tooltipHeight > window.innerHeight) {
+          tooltipTop = window.innerHeight - tooltipHeight - 10;
+        }
+
+        // Adjust if tooltip would extend beyond top edge of window
+        if (tooltipTop < 0) {
+          tooltipTop = 10;
+        }
+
+        tooltipEl
+          .style('left', `${tooltipLeft}px`)
+          .style('top', `${tooltipTop}px`);
+      });
 
     // Add horizontal grid lines
     this.svg

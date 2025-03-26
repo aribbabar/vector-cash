@@ -5,7 +5,6 @@
 
 .account-categories-container h2 {
   margin-bottom: 24px;
-  font-size: 1.8rem;
   color: var(--mat-sys-on-surface);
   border-bottom: 2px solid var(--mat-sys-outline);
   padding-bottom: 12px;
@@ -19,7 +18,9 @@
 
 .category-card {
   height: 100%;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   border-radius: 8px;
   overflow: hidden;
   border-left: 4px solid var(--mat-sys-primary); /* Default border color */
@@ -80,7 +81,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 60px;
   text-align: center;
   background-color: var(--mat-sys-surface-container-low);
   padding: 40px;
