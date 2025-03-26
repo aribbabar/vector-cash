@@ -162,6 +162,7 @@ export class ChartComponent implements AfterViewInit, OnDestroy {
     this.svg.selectAll('.axis').remove();
     this.svg.selectAll('.grid').remove();
     this.svg.selectAll('.axis-label').remove();
+    this.svg.selectAll('path').remove();
 
     // X scale
     const x = d3
