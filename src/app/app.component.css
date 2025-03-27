@@ -58,6 +58,7 @@ mat-sidenav-content {
 }
 
 mat-toolbar {
+  background-color: var(--mat-sys-primary-container);
   box-shadow: var(--mat-sys-level1);
   z-index: 2;
 }
@@ -125,8 +126,7 @@ mat-toolbar nav a mat-icon {
 
 footer {
   padding: 16px 24px;
-  background-color: var(--mat-sys-primary);
-  color: var(--mat-sys-surface);
+  background-color: var(--mat-sys-primary-container);
   text-align: center;
 }
 

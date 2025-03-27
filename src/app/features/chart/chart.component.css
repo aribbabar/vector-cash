@@ -136,6 +136,7 @@ h2 {
   position: fixed;
   padding: 10px;
   background: rgba(255, 255, 255, 0.9);
+  color: var(--mat-sys-on-primary-fixed);
   border: 1px solid #ddd;
   border-radius: 4px;
   pointer-events: none;
@@ -156,17 +157,17 @@ h2 {
 }
 
 .tooltip-value.assets span {
-  color: var(--mat-sys-tertiary);
+  color: #006e1c;
   font-weight: bold;
 }
 
 .tooltip-value.liabilities span {
-  color: var(--mat-sys-error);
+  color: #ba1a20;
   font-weight: bold;
 }
 
 .tooltip-value.net-worth span {
-  color: var(--mat-sys-primary);
+  color: #005faf;
   font-weight: bold;
 }
 

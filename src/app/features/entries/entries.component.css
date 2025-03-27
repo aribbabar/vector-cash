@@ -24,11 +24,11 @@ table {
 
 /* Alternating row colors */
 .mat-mdc-row:nth-child(even) {
-  background-color: var(--mat-sys-surface-container-lowest);
+  background-color: var(--mat-sys-surface-dim);
 }
 
 .mat-mdc-row:nth-child(odd) {
-  background-color: var(--mat-sys-surface);
+  background-color: var(--mat-sys-surface-bright);
 }
 
 .mat-mdc-row:hover {
