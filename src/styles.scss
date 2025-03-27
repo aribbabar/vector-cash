@@ -110,6 +110,7 @@ CSS Variables
 
 html,
 body {
+  box-sizing: border-box;
   height: 100%;
   cursor: default;
 }

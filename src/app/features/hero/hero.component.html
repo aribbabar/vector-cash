@@ -1,43 +1,35 @@
-<section class="hero">
-  <div class="hero-content">
-    <h1>Take Control of Your Finances</h1>
-    <p>Track your cash, investments, debts, and assets in one place.</p>
-    <a
-      mat-raised-button
-      color="primary"
-      routerLink="dashboard"
-      routerLinkActive="active"
-      >Dashboard</a
-    >
-  </div>
+<section class="hero-main">
+  <h1>Take Control of Your Finances</h1>
+  <p>Track your cash, investments, debts, and assets in one place.</p>
+  <a mat-raised-button color="primary" routerLink="dashboard">Dashboard</a>
 </section>
 
-<section class="features">
-  <mat-grid-list cols="3" rowHeight="200px">
-    <mat-grid-tile>
-      <mat-card>
-        <mat-card-title>Real-Time Tracking</mat-card-title>
-        <mat-card-content
-          >Monitor your net worth and cash flow instantly.</mat-card-content
-        >
-      </mat-card>
-    </mat-grid-tile>
-    <mat-grid-tile>
-      <mat-card>
-        <mat-card-title>Secure & Private</mat-card-title>
-        <mat-card-content
-          >Your financial data stays encrypted and safe.</mat-card-content
-        >
-      </mat-card>
-    </mat-grid-tile>
-    <mat-grid-tile>
-      <mat-card>
-        <mat-card-title>Easy to Use</mat-card-title>
-        <mat-card-content
-          >Intuitive design that makes tracking finances
-          simple.</mat-card-content
-        >
-      </mat-card>
-    </mat-grid-tile>
-  </mat-grid-list>
+<section class="features-section">
+  <mat-card appearance="outlined">
+    <div class="card-icon">
+      <mat-icon>timeline</mat-icon>
+    </div>
+    <mat-card-title>Real-Time Tracking</mat-card-title>
+    <mat-card-content
+      >Monitor your net worth and cash flow instantly.</mat-card-content
+    >
+  </mat-card>
+  <mat-card appearance="outlined">
+    <div class="card-icon">
+      <mat-icon>shield</mat-icon>
+    </div>
+    <mat-card-title>Secure & Private</mat-card-title>
+    <mat-card-content
+      >Your financial data never leaves the browser</mat-card-content
+    >
+  </mat-card>
+  <mat-card appearance="outlined">
+    <div class="card-icon">
+      <mat-icon>touch_app</mat-icon>
+    </div>
+    <mat-card-title>Easy to Use</mat-card-title>
+    <mat-card-content
+      >Intuitive design that makes tracking finances simple.</mat-card-content
+    >
+  </mat-card>
 </section>
