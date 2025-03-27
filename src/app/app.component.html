@@ -1,31 +1,60 @@
-<mat-toolbar color="primary" class="navbar">
-  <a routerLink=""><span class="logo">VectorCash</span></a>
-  <span class="spacer"></span>
-  <a
-    mat-button
-    routerLink=""
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: true }"
-    >Home</a
-  >
-  <a
-    mat-button
-    routerLink="dashboard"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: true }"
-    >Dashboard</a
-  >
-  <a
-    mat-button
-    routerLink="settings"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: true }"
-    >Settings</a
-  >
-</mat-toolbar>
+<mat-sidenav-container>
+  <mat-sidenav #sidenav mode="over">
+    <a routerLink="" (click)="sidenav.close()">
+      <img src="favicon.svg" alt="VectorCash Logo" />
+      <span>VectorCash</span>
+    </a>
+    <hr />
+    <nav>
+      @for (route of routes; track $index) {
+        <a
+          (click)="clickHandler()"
+          routerLink="{{ route.path }}"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <mat-icon class="sidenav-icon">{{
+            getRouteIcon(route.path!)
+          }}</mat-icon>
+          <span>{{ route.path | titlecase }}</span>
+        </a>
+      }
+    </nav>
+  </mat-sidenav>
 
-<router-outlet></router-outlet>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      <header>
+        <mat-icon (click)="sidenav.toggle()">menu</mat-icon>
+        <a routerLink="">
+          <img src="favicon.svg" alt="VectorCash Logo" />
+          <span>VectorCash</span>
+        </a>
+        <nav>
+          @for (route of routes; track $index) {
+            <a
+              class="sidenav-link-desktop"
+              routerLink="{{ route.path }}"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              (click)="sidenav.close()"
+            >
+              <mat-icon class="sidenav-icon">{{
+                getRouteIcon(route.path!)
+              }}</mat-icon>
+              <span>{{ route.path | titlecase }}</span>
+            </a>
+          }
+        </nav>
+      </header>
+    </mat-toolbar>
 
-<footer>
-  <p>&copy; 2025 VectorCash. All rights reserved.</p>
-</footer>
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 VectorCash. All rights reserved.</p>
+    </footer>
+  </mat-sidenav-content>
+</mat-sidenav-container>

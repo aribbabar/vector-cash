@@ -5,27 +5,30 @@
   <div class="account-section asset-section">
     <h3>Assets</h3>
 
-    <div *ngFor="let category of getAssetCategories()" class="category-group">
-      <h4>{{ category.name }}</h4>
-      <div class="accounts-list">
-        <div
-          *ngFor="let account of getAccountsByCategory(category.id!)"
-          class="account-card"
-        >
-          <div class="account-details">
-            <div class="account-name">{{ account.name }}</div>
-            <div class="account-balance">{{ account.balance | currency }}</div>
-          </div>
-          <div class="account-actions">
-            <button class="btn-edit" (click)="openUpdateDialog(account)">
-              <i class="fas fa-edit"></i> Edit
-            </button>
-            <button class="btn-delete" (click)="openDeleteDialog(account)">
-              <i class="fas fa-trash-alt"></i> Delete
-            </button>
-          </div>
+    <div class="category-group">
+      @for (category of getAssetCategories(); track category) {
+        <h4>{{ category.name }}</h4>
+        <div class="accounts-list">
+          @for (account of getAccountsByCategory(category.id!); track account) {
+            <div class="account-card">
+              <div class="account-details">
+                <div class="account-name">{{ account.name }}</div>
+                <div class="account-balance">
+                  {{ account.balance | currency }}
+                </div>
+              </div>
+              <div class="account-actions">
+                <button class="btn-edit" (click)="openUpdateDialog(account)">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn-delete" (click)="openDeleteDialog(account)">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
+            </div>
+          }
         </div>
-      </div>
+      }
     </div>
   </div>
 
@@ -33,30 +36,30 @@
   <div class="account-section liability-section">
     <h3>Liabilities</h3>
 
-    <div
-      *ngFor="let category of getLiabilityCategories()"
-      class="category-group"
-    >
-      <h4>{{ category.name }}</h4>
-      <div class="accounts-list">
-        <div
-          *ngFor="let account of getAccountsByCategory(category.id!)"
-          class="account-card"
-        >
-          <div class="account-details">
-            <div class="account-name">{{ account.name }}</div>
-            <div class="account-balance">{{ account.balance | currency }}</div>
-          </div>
-          <div class="account-actions">
-            <button class="btn-edit" (click)="openUpdateDialog(account)">
-              <i class="fas fa-edit"></i> Edit
-            </button>
-            <button class="btn-delete" (click)="openDeleteDialog(account)">
-              <i class="fas fa-trash-alt"></i> Delete
-            </button>
-          </div>
+    <div class="category-group">
+      @for (category of getLiabilityCategories(); track category) {
+        <h4>{{ category.name }}</h4>
+        <div class="accounts-list">
+          @for (account of getAccountsByCategory(category.id!); track account) {
+            <div class="account-card">
+              <div class="account-details">
+                <div class="account-name">{{ account.name }}</div>
+                <div class="account-balance">
+                  {{ account.balance | currency }}
+                </div>
+              </div>
+              <div class="account-actions">
+                <button class="btn-edit" (click)="openUpdateDialog(account)">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn-delete" (click)="openDeleteDialog(account)">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
+            </div>
+          }
         </div>
-      </div>
+      }
     </div>
   </div>
 </div>

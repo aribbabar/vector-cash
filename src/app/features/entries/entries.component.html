@@ -1,4 +1,5 @@
 <h2>Entries</h2>
+
 @if (totalEntries > 0) {
   <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort>
@@ -18,17 +19,16 @@
       </ng-container>
 
       <!-- Dynamic Account Columns -->
-      <ng-container
-        *ngFor="let account of accounts"
-        [matColumnDef]="account.id!.toString()"
-      >
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>
-          {{ account.name }} ({{ getAccountCategory(account.categoryId) }})
-        </th>
-        <td mat-cell *matCellDef="let entry">
-          {{ getAccountBalance(entry, account.id!) | currency }}
-        </td>
-      </ng-container>
+      @for (account of accounts; track account.id) {
+        <ng-container [matColumnDef]="account.id!.toString()">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            {{ account.name }} ({{ getAccountCategory(account.categoryId) }})
+          </th>
+          <td mat-cell *matCellDef="let entry">
+            {{ getAccountBalance(entry, account.id!) | currency }}
+          </td>
+        </ng-container>
+      }
 
       <!-- Actions Column -->
       <ng-container matColumnDef="actions">

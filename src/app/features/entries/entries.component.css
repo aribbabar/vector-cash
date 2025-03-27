@@ -20,7 +20,6 @@ table {
   padding: 12px 16px;
   min-width: 150px;
   color: var(--mat-sys-on-surface);
-  font-weight: 500;
 }
 
 /* Alternating row colors */
@@ -40,8 +39,6 @@ table {
 /* Date column specific styling */
 .date-column {
   border-right: 1px solid var(--mat-sys-outline);
-  font-weight: 500;
-  min-width: 120px;
 }
 
 .paginator-container {
@@ -50,65 +47,5 @@ table {
   right: 0;
   bottom: 0;
   width: 100%;
-  background-color: var(--mat-sys-surface-container-high);
-  z-index: 1;
   box-shadow: var(--mat-sys-level2);
-}
-
-/* Styling for cell content */
-.mat-mdc-cell {
-  color: var(--mat-sys-on-surface);
-  padding: 12px 16px;
-}
-
-/* Positive and negative values */
-.positive-value {
-  color: var(--mat-sys-tertiary);
-}
-
-.negative-value {
-  color: var(--mat-sys-error);
-}
-
-/* Actions column */
-.actions-column {
-  min-width: 100px;
-  text-align: right;
-}
-
-.action-button {
-  min-width: 36px;
-  height: 36px;
-  padding: 0;
-  margin: 0 4px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  color: var(--mat-sys-on-surface-variant);
-  transition: background-color 0.2s;
-}
-
-.action-button:hover {
-  background-color: var(--mat-sys-surface-container-high);
-}
-
-.edit-button:hover {
-  color: var(--mat-sys-primary);
-}
-
-.delete-button:hover {
-  color: var(--mat-sys-error);
-}
-
-@media (max-width: 768px) {
-  .table-container {
-    border-radius: 0;
-  }
-
-  .mat-mdc-header-cell,
-  .mat-mdc-cell {
-    padding: 8px 12px;
-  }
 }

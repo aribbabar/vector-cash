@@ -67,11 +67,25 @@ export class EntriesComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.accounts = await this.accountService.getAccounts();
-    this.accountCategories =
-      await this.accountCategoryService.getAccountCategories();
-    this.formattedEntries = await this.formattedData.getFormattedEntries();
+    await this.initializeData();
+    this.setupTable();
+    this.setupEventListeners();
+  }
 
+  private async initializeData(): Promise<void> {
+    // Load data in parallel for better performance
+    const [accounts, categories, entries] = await Promise.all([
+      this.accountService.getAccounts(),
+      this.accountCategoryService.getAccountCategories(),
+      this.formattedData.getFormattedEntries()
+    ]);
+
+    this.accounts = accounts;
+    this.accountCategories = categories;
+    this.formattedEntries = entries;
+  }
+
+  private setupTable(): void {
     // Separate accounts into assets and liabilities
     const assetAccounts = this.accounts.filter((account) => {
       const category = this.accountCategories.find(
@@ -96,37 +110,47 @@ export class EntriesComponent implements OnInit {
     ];
 
     this.dataSource.data = this.formattedEntries;
-
-    // Custom sorting for non-standard columns (especially for account balances)
-    this.dataSource.sortingDataAccessor = (
-      entry: FormattedEntry,
-      columnId: string
-    ) => {
-      if (columnId === 'date') {
-        return new Date(entry.date).getTime(); // Convert to timestamp for date sorting
-      }
-
-      // For account columns (which are account.toString())
-      const account = this.accounts.find(
-        (acc) => acc.id!.toString() === columnId
-      );
-      if (account) {
-        return this.getAccountBalance(entry, account.id!);
-      }
-
-      return 0;
-    };
-
     this.totalEntries = this.formattedEntries.length;
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
 
-    this.sort.sort({
-      id: 'date',
-      start: 'desc',
-      disableClear: false
+    // Apply sorting after waiting for ViewChild to initialize
+    setTimeout(() => {
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+
+      // Custom sorting for non-standard columns (especially for account balances)
+      this.dataSource.sortingDataAccessor = (
+        entry: FormattedEntry,
+        columnId: string
+      ) => {
+        if (columnId === 'date') {
+          return new Date(entry.date).getTime(); // Convert to timestamp for date sorting
+        }
+
+        // For account columns
+        const accountId = parseInt(columnId, 10);
+        if (!isNaN(accountId)) {
+          const accountEntry = entry.accounts.find(
+            (acc) => acc.id === accountId
+          );
+          return accountEntry ? accountEntry.balance : 0;
+        }
+
+        return 0;
+      };
+
+      // Set initial sort
+      this.sort.sort({
+        id: 'date',
+        start: 'desc',
+        disableClear: false
+      });
+
+      // Ensure the sort is applied
+      this.dataSource.sort = this.sort;
     });
+  }
 
+  private setupEventListeners(): void {
     this.globalEventService.events$.subscribe((event) => {
       if (event.name === GlobalEvents.REFRESH_ENTRIES) {
         this.refreshEntries();
@@ -183,6 +207,7 @@ export class EntriesComponent implements OnInit {
     try {
       await this.formattedData.deleteFormattedEntries(entry.date);
       this.snackBar.open('Entry deleted', 'Dismiss', { duration: 5000 });
+      await this.refreshEntries();
     } catch (error) {
       console.error('Error deleting entry:', error);
       this.snackBar.open('Error deleting entry', 'Dismiss', { duration: 5000 });
@@ -197,6 +222,8 @@ export class EntriesComponent implements OnInit {
 
   async refreshAccounts(): Promise<void> {
     this.accounts = await this.accountService.getAccounts();
+    // Reconfigure table to reflect updated accounts
+    this.setupTable();
   }
 
   async refreshCategories(): Promise<void> {

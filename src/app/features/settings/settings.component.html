@@ -11,14 +11,15 @@
           <div class="setting-group">
             <h3>Theme</h3>
             <div class="theme-options">
-              <button
-                mat-raised-button
-                *ngFor="let theme of themeOptions"
-                [class.active]="theme === currentTheme"
-                (click)="changeTheme(theme)"
-              >
-                {{ theme | titlecase }}
-              </button>
+              @for (theme of themeOptions; track theme) {
+                <button
+                  mat-raised-button
+                  [class.active]="theme === currentTheme"
+                  (click)="changeTheme(theme)"
+                >
+                  {{ theme | titlecase }}
+                </button>
+              }
             </div>
           </div>
         </div>
@@ -32,70 +33,70 @@
           <div class="setting-group">
             <h3>Deleted Accounts</h3>
 
-            <div
-              class="deleted-accounts-list"
-              *ngIf="inactiveAccounts.length > 0"
-            >
-              <mat-expansion-panel *ngFor="let account of inactiveAccounts">
-                <mat-expansion-panel-header>
-                  <mat-panel-title>
-                    {{ account.name }}
-                  </mat-panel-title>
-                </mat-expansion-panel-header>
+            @if (inactiveAccounts.length > 0) {
+              <div class="deleted-accounts-list">
+                @for (account of inactiveAccounts; track account.id!) {
+                  <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        {{ account.name }}
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
 
-                <div class="account-actions">
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    (click)="restoreAccount(account.id!)"
-                  >
-                    <mat-icon>restore</mat-icon>
-                    Restore Account
-                  </button>
-                </div>
-              </mat-expansion-panel>
-            </div>
-
-            <div class="empty-state" *ngIf="inactiveAccounts.length === 0">
-              <p>No deleted accounts available for restoration.</p>
-            </div>
+                    <div class="account-actions">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="restoreAccount(account.id!)"
+                      >
+                        <mat-icon>restore</mat-icon>
+                        Restore Account
+                      </button>
+                    </div>
+                  </mat-expansion-panel>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>No deleted accounts available for restoration.</p>
+              </div>
+            }
           </div>
 
           <div class="setting-group">
             <h3>Deleted Categories</h3>
 
-            <div
-              class="deleted-categories-list"
-              *ngIf="inactiveAccountCategories.length > 0"
-            >
-              <mat-expansion-panel
-                *ngFor="let category of inactiveAccountCategories"
-              >
-                <mat-expansion-panel-header>
-                  <mat-panel-title>
-                    {{ category.name }}
-                  </mat-panel-title>
-                </mat-expansion-panel-header>
+            @if (inactiveAccountCategories.length > 0) {
+              <div class="deleted-categories-list">
+                @for (
+                  category of inactiveAccountCategories;
+                  track category.id!
+                ) {
+                  <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        {{ category.name }}
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
 
-                <div class="account-actions">
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    (click)="restoreCategory(category.id!)"
-                  >
-                    <mat-icon>restore</mat-icon>
-                    Restore Category
-                  </button>
-                </div>
-              </mat-expansion-panel>
-            </div>
-
-            <div
-              class="empty-state"
-              *ngIf="inactiveAccountCategories.length === 0"
-            >
-              <p>No deleted categories available for restoration.</p>
-            </div>
+                    <div class="account-actions">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="restoreCategory(category.id!)"
+                      >
+                        <mat-icon>restore</mat-icon>
+                        Restore Category
+                      </button>
+                    </div>
+                  </mat-expansion-panel>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>No deleted categories available for restoration.</p>
+              </div>
+            }
           </div>
         </div>
       </mat-tab>

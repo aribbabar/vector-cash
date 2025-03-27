@@ -82,7 +82,7 @@ CSS Variables
         tertiary: light-theme.$tertiary-palette,
         // neutral: light-theme.$neutral-palette,
         // neutral-variant: light-theme.$neutral-variant-palette,
-        // error: light-theme.$error-palette
+         // error: light-theme.$error-palette
       ),
       typography: Roboto,
       density: 0
@@ -100,7 +100,7 @@ CSS Variables
         tertiary: dark-theme.$tertiary-palette,
         // neutral: dark-theme.$neutral-palette,
         // neutral-variant: dark-theme.$neutral-variant-palette,
-        // error: dark-theme.$error-palette
+         // error: dark-theme.$error-palette
       ),
       typography: Roboto,
       density: 0
@@ -119,6 +119,11 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 a {

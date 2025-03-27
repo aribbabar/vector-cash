@@ -1,27 +1,49 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatGridListModule } from '@angular/material/grid-list';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
+import { routes } from './app.routes';
 import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
   imports: [
+    CommonModule,
     RouterModule,
-    MatGridListModule,
-    MatCardModule,
     MatButtonModule,
-    MatDialogModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatIconModule,
+    MatSidenavModule,
+    MatListModule,
+    MatDividerModule
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  title = 'vector_cash';
+  @ViewChild('sidenav') sidenav!: MatSidenav;
 
-  constructor(private themeService: ThemeService) {}
+  routes = routes.filter((route) => route.path !== '**' && route.path !== '');
+
+  constructor(public themeService: ThemeService) {}
+
+  getRouteIcon(path: string): string {
+    // Map routes to appropriate Material icons
+    const iconMap: { [key: string]: string } = {
+      dashboard: 'dashboard',
+      settings: 'settings'
+    };
+
+    return iconMap[path] || 'arrow_right'; // Default icon if not found
+  }
+
+  clickHandler() {
+    this.sidenav.close();
+  }
 }
