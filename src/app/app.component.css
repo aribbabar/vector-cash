@@ -1,47 +1,45 @@
-/* Main container */
 mat-sidenav-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Sidenav styling */
 mat-sidenav {
   width: 250px;
-  background-color: var(--mat-sys-surface-container);
-  color: var(--mat-sys-on-surface);
   padding: 16px 0;
 }
 
-mat-sidenav a[routerLink=""] {
+mat-sidenav a {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  padding: 12px 16px;
+  transition: background-color 0.2s;
 }
 
 mat-sidenav a img {
-  height: 32px;
-  width: 32px;
+  height: 24px;
+  margin-right: 12px;
 }
 
 mat-sidenav hr {
-  width: 80%;
+  margin: 12px 0;
+  border: none;
+  border-top: 1px solid var(--mat-sys-outline);
+  opacity: 0.3;
+}
+
+mat-sidenav nav {
+  display: flex;
+  flex-direction: column;
 }
 
 mat-sidenav nav a {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  color: var(--mat-sys-on-surface);
-  transition:
-    background-color 0.2s,
-    color 0.2s;
+  margin: 4px 8px;
+  border-radius: 4px;
 }
 
 mat-sidenav nav a:hover {
-  background-color: var(--mat-sys-surface-container-high);
+  background-color: var(--mat-sys-surface-container-highest);
 }
 
 mat-sidenav nav a.active {
@@ -49,52 +47,63 @@ mat-sidenav nav a.active {
   color: var(--mat-sys-surface);
 }
 
-.sidenav-icon {
-  margin-right: 4px;
+mat-sidenav nav a mat-icon {
+  margin-right: 12px;
 }
 
-/* Toolbar styling */
+mat-sidenav-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 mat-toolbar {
-  height: 64px;
   box-shadow: var(--mat-sys-level1);
+  z-index: 2;
 }
 
 mat-toolbar header {
   display: flex;
   align-items: center;
   width: 100%;
-  height: 100%;
+  padding: 0 8px;
 }
 
 mat-toolbar header mat-icon {
-  cursor: pointer;
   margin-right: 16px;
-  display: none;
+  cursor: pointer;
 }
 
-mat-toolbar a[routerLink=""] {
+mat-toolbar a {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 mat-toolbar a img {
-  height: 32px;
-  width: 32px;
+  height: 28px;
+  margin-right: 12px;
+}
+
+mat-toolbar a span {
+  font-size: medium;
+  font-weight: 500;
 }
 
 mat-toolbar nav {
-  margin-left: auto;
   display: flex;
-  align-items: center;
+  margin-left: auto;
 }
 
 mat-toolbar nav a {
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  height: 64px;
+  margin: 0 4px;
+  padding: 0 12px;
+  height: 36px;
+  border-radius: 4px;
   transition: background-color 0.2s;
+}
+
+mat-toolbar nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 mat-toolbar nav a.active {
@@ -102,40 +111,38 @@ mat-toolbar nav a.active {
   color: var(--mat-sys-surface);
 }
 
-mat-toolbar nav a:not(.active):hover {
-  background-color: var(--mat-sys-surface-container-high);
-}
-
-mat-toolbar nav a .sidenav-icon {
+mat-toolbar nav a mat-icon {
   margin-right: 8px;
 }
 
-.sidenav-link-desktop {
-  font-size: medium;
+.mobile-nav-home {
+  justify-content: center;
 }
 
-/* Footer styling */
+.mobile-nav-link {
+  justify-content: revert;
+}
+
 footer {
-  padding: 16px;
-  text-align: center;
+  padding: 16px 24px;
   background-color: var(--mat-sys-primary);
   color: var(--mat-sys-surface);
-  box-shadow: var(--mat-sys-level1);
+  text-align: center;
 }
 
 /* Responsive adjustments */
-@media screen and (max-width: 1023px) {
-  mat-toolbar header mat-icon {
-    display: block;
-  }
-
+@media (max-width: 768px) {
   mat-toolbar nav {
     display: none;
   }
+
+  mat-toolbar header {
+    justify-content: space-between;
+  }
 }
 
-@media screen and (min-width: 1024px) {
-  mat-sidenav-content {
-    overflow: auto;
+@media (min-width: 769px) {
+  mat-sidenav-content mat-toolbar mat-icon {
+    display: none;
   }
 }

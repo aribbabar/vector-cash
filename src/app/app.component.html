@@ -1,6 +1,6 @@
 <mat-sidenav-container>
   <mat-sidenav #sidenav mode="over">
-    <a routerLink="" (click)="sidenav.close()">
+    <a class="mobile-nav-home" routerLink="" (click)="sidenav.close()">
       <img src="favicon.svg" alt="VectorCash Logo" />
       <span>VectorCash</span>
     </a>
@@ -8,14 +8,14 @@
     <nav>
       @for (route of routes; track $index) {
         <a
+          class="mobile-nav-link"
+          mat-button
           (click)="clickHandler()"
           routerLink="{{ route.path }}"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: true }"
         >
-          <mat-icon class="sidenav-icon">{{
-            getRouteIcon(route.path!)
-          }}</mat-icon>
+          <mat-icon>{{ getRouteIcon(route.path!) }}</mat-icon>
           <span>{{ route.path | titlecase }}</span>
         </a>
       }
@@ -33,15 +33,13 @@
         <nav>
           @for (route of routes; track $index) {
             <a
-              class="sidenav-link-desktop"
+              mat-button
               routerLink="{{ route.path }}"
               routerLinkActive="active"
               [routerLinkActiveOptions]="{ exact: true }"
               (click)="sidenav.close()"
             >
-              <mat-icon class="sidenav-icon">{{
-                getRouteIcon(route.path!)
-              }}</mat-icon>
+              <mat-icon>{{ getRouteIcon(route.path!) }}</mat-icon>
               <span>{{ route.path | titlecase }}</span>
             </a>
           }
