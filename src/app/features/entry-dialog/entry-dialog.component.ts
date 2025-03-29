@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, Inject, OnInit } from '@angular/core';
+import { CommonModule } from "@angular/common";
+import { Component, Inject, OnInit } from "@angular/core";
 import {
   FormArray,
   FormBuilder,
@@ -7,33 +7,31 @@ import {
   FormsModule,
   ReactiveFormsModule,
   Validators
-} from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+} from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
 import {
   MatNativeDateModule,
   provideNativeDateAdapter
-} from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
+} from "@angular/material/core";
+import { MatDatepickerModule } from "@angular/material/datepicker";
 import {
   MAT_DIALOG_DATA,
   MatDialogModule,
   MatDialogRef
-} from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+} from "@angular/material/dialog";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatIconModule } from "@angular/material/icon";
+import { MatInputModule } from "@angular/material/input";
 
-import { AccountCategory } from '../../core/models/account-category.model';
-import { AccountCategoryService } from '../../core/services/account-category.service';
-import { EntryService } from '../../core/services/entry.service';
-import {
-  FormattedAccount,
-  FormattedDataService,
-  FormattedEntry
-} from '../../core/services/formatted-data.service';
+import { AccountCategory } from "../../core/models/account-category.model";
+import { Account } from "../../core/models/account.model";
+import { GroupedEntry } from "../../core/models/entry.model";
+import { AccountCategoryService } from "../../core/services/account-category.service";
+import { AccountService } from "../../core/services/account.service";
+import { EntryService } from "../../core/services/entry.service";
 
 @Component({
-  selector: 'app-entry-dialog',
+  selector: "app-entry-dialog",
   standalone: true,
   imports: [
     CommonModule,
@@ -48,90 +46,136 @@ import {
     MatIconModule
   ],
   providers: [provideNativeDateAdapter()],
-  templateUrl: './entry-dialog.component.html',
-  styleUrl: './entry-dialog.component.css'
+  templateUrl: "./entry-dialog.component.html",
+  styleUrl: "./entry-dialog.component.scss"
 })
 export class EntryDialogComponent implements OnInit {
-  accountsList: FormattedAccount[] = []; // Renamed from accounts to avoid conflict
-  categories: AccountCategory[] = [];
-  entryForm: FormGroup;
+  accounts: Account[] = [];
+  accountCategories: AccountCategory[] = [];
+  activeAccounts: Account[] = [];
+  activeAccountCategories: AccountCategory[] = [];
+  entryForm!: FormGroup;
+  isUpdateMode!: boolean;
 
   constructor(
     private entryService: EntryService,
-    private formattedDataService: FormattedDataService,
+    private accountService: AccountService,
     private accountCategoryService: AccountCategoryService,
     private formBuilder: FormBuilder,
     public dialogRef: MatDialogRef<EntryDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { entry: FormattedEntry }
-  ) {
-    let date = new Date();
-
-    if (data) {
-      // Update logic here
-      date = new Date(data.entry.date);
-    }
-
-    this.entryForm = this.formBuilder.group({
-      date: [date, Validators.required],
-      accounts: this.formBuilder.array([])
-    });
-  }
+    @Inject(MAT_DIALOG_DATA) public data: { entry: GroupedEntry }
+  ) {}
 
   async ngOnInit() {
-    try {
-      this.categories =
-        await this.accountCategoryService.getAccountCategories();
+    const groupedEntry = this.data?.entry;
+    this.accounts = await this.accountService.getAll();
+    this.accountCategories = await this.accountCategoryService.getAll();
+    this.activeAccounts = await this.accountService.getAllWhere(
+      (account) => account.isActive === true
+    );
+    this.activeAccountCategories =
+      await this.accountCategoryService.getAllWhere(
+        (accountCategory) => accountCategory.isActive === true
+      );
 
-      if (this.data && this.data.entry) {
-        // Update logic - populate form with only the accounts from the entry
-        const formattedEntry = this.data.entry;
+    this.isUpdateMode = groupedEntry ? true : false;
 
-        // Use the accounts from the entry
-        this.accountsList = formattedEntry.accounts;
+    if (this.isUpdateMode) {
+      this.entryForm = this.formBuilder.group({
+        date: [new Date(groupedEntry.date), Validators.required],
+        accounts: this.formBuilder.array([])
+      });
 
-        // Sort accounts by type (Assets first, then Liabilities) and then alphabetically
-        this.sortAccounts();
+      // Populate the form with existing entry data - sorted by category type
+      const sortedEntries = [...this.data.entry.entries].sort((a, b) => {
+        const accountA = this.accounts.find((acc) => acc.id === a.accountId);
+        const accountB = this.accounts.find((acc) => acc.id === b.accountId);
 
-        // Set the date from the entry
-        this.entryForm.get('date')?.setValue(new Date(formattedEntry.date));
+        const categoryA = this.accountCategories.find(
+          (cat) => cat.id === accountA?.categoryId
+        );
+        const categoryB = this.accountCategories.find(
+          (cat) => cat.id === accountB?.categoryId
+        );
 
-        // Populate the form with the entry accounts and their balances
-        this.accountsList.forEach((account) => {
+        // Sort assets (Asset) first, then liabilities (Liability)
+        if (categoryA?.type === "Asset" && categoryB?.type !== "Asset")
+          return -1;
+        if (categoryA?.type !== "Asset" && categoryB?.type === "Asset")
+          return 1;
+        return 0;
+      });
+
+      sortedEntries.forEach((entry) => {
+        const account = this.accounts.find(
+          (account) => account.id === entry.accountId
+        );
+
+        const accountCategory = this.accountCategories.find(
+          (category) => category.id === account?.categoryId
+        );
+
+        if (account) {
           this.accountsArray.push(
-            this.createAccountFormGroup(account, account.balance)
+            this.createAccountFormGroup(
+              account,
+              accountCategory!,
+              entry.balance
+            )
           );
-        });
-      } else {
-        // Create logic - initialize form with all accounts
-        this.accountsList =
-          await this.formattedDataService.getFormattedAccounts(true);
+        }
+      });
+    } else {
+      this.entryForm = this.formBuilder.group({
+        date: [new Date(), Validators.required],
+        accounts: this.formBuilder.array([])
+      });
 
-        // Sort accounts by type (Assets first, then Liabilities) and then alphabetically
-        this.sortAccounts();
+      // Add all active accounts to the form by default - sorted by category type
+      const sortedAccounts = [...this.activeAccounts].sort((a, b) => {
+        const categoryA = this.accountCategories.find(
+          (cat) => cat.id === a.categoryId
+        );
+        const categoryB = this.accountCategories.find(
+          (cat) => cat.id === b.categoryId
+        );
 
-        // Initialize form with all active accounts but no balances
-        this.accountsList.forEach((account) => {
-          this.accountsArray.push(this.createAccountFormGroup(account));
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load accounts:', error);
+        // Sort assets (Asset) first, then liabilities (Liability)
+        if (categoryA?.type === "Asset" && categoryB?.type !== "Asset")
+          return -1;
+        if (categoryA?.type !== "Asset" && categoryB?.type === "Asset")
+          return 1;
+        return 0;
+      });
+
+      sortedAccounts.forEach((account) => {
+        const accountCategory = this.accountCategories.find(
+          (category) => category.id === account?.categoryId
+        );
+
+        this.accountsArray.push(
+          this.createAccountFormGroup(account, accountCategory!)
+        );
+      });
     }
   }
 
   // Getter for the accounts FormArray
   get accountsArray() {
-    return this.entryForm.get('accounts') as FormArray;
+    return this.entryForm.get("accounts") as FormArray;
   }
 
   // Create a form group for each account
   createAccountFormGroup(
-    account: FormattedAccount,
-    balance?: number
+    account: Account,
+    accountCategory: AccountCategory,
+    balance: number | undefined = 20
   ): FormGroup {
     return this.formBuilder.group({
       id: [account.id],
-      name: [account.name],
+      accountName: [account.name],
+      accountCategory: [accountCategory.name],
+      accountCategoryType: [accountCategory.type],
       balance: [
         balance,
         [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]
@@ -148,81 +192,24 @@ export class EntryDialogComponent implements OnInit {
       return;
     }
 
-    const formValues = this.entryForm.value;
-    const formattedDate = new Intl.DateTimeFormat('en-US').format(
-      formValues.date
-    );
-
-    const entries = formValues.accounts.map((accountData: any) => ({
-      date: formattedDate,
-      accountId: accountData.id,
-      balance: parseFloat(accountData.balance)
-    }));
-
     try {
-      // Use Promise.all to wait for all entries to be processed
-      await Promise.all(
-        entries.map(async (entry: any) => {
-          // Check if an entry already exists for this account on the given date
-          const existingEntry =
-            await this.entryService.getEntryByAccountAndDate(
-              entry.accountId,
-              entry.date
-            );
-
-          if (existingEntry) {
-            // Update existing entry
-            await this.entryService.updateEntry({
-              ...existingEntry,
-              balance: entry.balance
-            });
-          } else {
-            // Add new entry
-            await this.entryService.addEntry(entry);
-          }
-        })
+      const date = Intl.DateTimeFormat("en-US").format(
+        this.entryForm.value.date
       );
+      const accounts = this.entryForm.value.accounts;
+
+      accounts.forEach((account: any) => {
+        this.entryService.add({
+          date: date,
+          accountId: account.id!,
+          balance: account.balance
+        });
+      });
 
       // Only close dialog after all operations complete successfully
       this.dialogRef.close(true);
     } catch (error) {
-      console.error('Error processing entries:', error);
-      // You could add error handling/showing here
+      console.error("Error processing entries:", error);
     }
-  }
-
-  getCategoryType(account: FormattedAccount): string {
-    const category = this.categories.find(
-      (cat) => cat.id === account.category!.id
-    );
-
-    return category ? category.type : '';
-  }
-
-  getAccountClass(account: FormattedAccount): string {
-    const categoryType = this.getCategoryType(account);
-    return categoryType === 'Asset' ? 'asset-account' : 'liability-account';
-  }
-
-  /**
-   * Sorts accounts by category type (Assets first, then Liabilities) and then alphabetically by name
-   */
-  private sortAccounts(): void {
-    this.accountsList.sort((a, b) => {
-      // Get category types
-      const typeA = this.getCategoryType(a);
-      const typeB = this.getCategoryType(b);
-
-      // First sort by category type (Assets before Liabilities)
-      if (typeA === 'Asset' && typeB !== 'Asset') {
-        return -1;
-      }
-      if (typeA !== 'Asset' && typeB === 'Asset') {
-        return 1;
-      }
-
-      // Then sort alphabetically by account name
-      return a.name.localeCompare(b.name);
-    });
   }
 }

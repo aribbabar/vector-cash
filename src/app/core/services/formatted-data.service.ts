@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { AccountCategory } from '../models/account-category.model';
-import { AccountCategoryService } from './account-category.service';
-import { AccountService } from './account.service';
-import { EntryService } from './entry.service';
+import { Injectable } from "@angular/core";
+import { AccountCategory } from "../models/account-category.model";
+import { AccountCategoryService } from "./account-category.service";
+import { AccountService } from "./account.service";
+import { EntryService } from "./entry.service";
 
 export interface FormattedAccount {
   id: number;
@@ -17,7 +17,7 @@ export interface FormattedEntry {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class FormattedDataService {
   constructor(
@@ -32,7 +32,7 @@ export class FormattedDataService {
    */
   async getFormattedEntries(): Promise<FormattedEntry[]> {
     const formattedEntries: FormattedEntry[] = [];
-    const entries = await this.entryService.getEntries();
+    const entries = await this.entryService.getAll();
 
     // Get unique dates
     const uniqueDates = [...new Set(entries.map((entry) => entry.date))];
@@ -50,7 +50,7 @@ export class FormattedDataService {
 
       // Get details for each account
       for (const accountId of accountIds) {
-        const account = await this.accountService.getAccount(accountId);
+        const account = await this.accountService.get(accountId);
 
         if (account) {
           // Calculate the balance for this account on this date
@@ -58,10 +58,9 @@ export class FormattedDataService {
             .filter((entry) => entry.accountId === accountId)
             .reduce((sum, entry) => sum + entry.balance, 0);
 
-          const accountCategory =
-            await this.accountCategoryService.getAccountCategory(
-              account.categoryId
-            );
+          const accountCategory = await this.accountCategoryService.get(
+            account.categoryId
+          );
 
           formattedAccounts.push({
             id: account.id!,
@@ -94,7 +93,7 @@ export class FormattedDataService {
    * @param date Date is formatted as 'MM/DD/YYYY'
    */
   async deleteFormattedEntries(date: string): Promise<void> {
-    await this.entryService.deleteEntries(date);
+    await this.entryService.removeAllOnDate(date);
   }
 
   /**
@@ -106,7 +105,7 @@ export class FormattedDataService {
     activeOnly: boolean = false
   ): Promise<FormattedAccount[]> {
     const formattedAccounts: FormattedAccount[] = [];
-    const accounts = await this.accountService.getAccounts();
+    const accounts = await this.accountService.getAll();
 
     // Filter accounts based on activeOnly parameter
     const filteredAccounts = activeOnly
@@ -115,13 +114,14 @@ export class FormattedDataService {
 
     // Process each account
     for (const account of filteredAccounts) {
-      const lastEntry = await this.entryService.getLastEntry(account.id!);
+      const lastEntry = await this.entryService.getLatestByAccountId(
+        account.id!
+      );
 
       // Get the account category details
-      const accountCategory =
-        await this.accountCategoryService.getAccountCategory(
-          account.categoryId
-        );
+      const accountCategory = await this.accountCategoryService.get(
+        account.categoryId
+      );
 
       const balance = lastEntry ? lastEntry.balance : 0;
 
@@ -147,7 +147,7 @@ export class FormattedDataService {
   async deleteFormattedAccount(account: FormattedAccount): Promise<void> {
     try {
       // Get the original account first (to preserve all properties)
-      const originalAccount = await this.accountService.getAccount(account.id);
+      const originalAccount = await this.accountService.get(account.id);
 
       if (!originalAccount) {
         throw new Error(`Account with ID ${account.id} not found`);
@@ -157,13 +157,13 @@ export class FormattedDataService {
       originalAccount.isActive = false;
 
       // Update the account in the database
-      await this.accountService.updateAccount(originalAccount);
+      await this.accountService.update(originalAccount.id!, originalAccount);
 
       // Optionally, you could also handle related entries here if needed
       // For example, you might want to mark entries related to this account
       // or perform other cleanup operations
     } catch (error) {
-      console.error('Error deleting account:', error);
+      console.error("Error deleting account:", error);
       throw error; // Re-throw the error so calling components can handle it
     }
   }

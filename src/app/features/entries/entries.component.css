@@ -49,3 +49,11 @@ table {
   width: 100%;
   box-shadow: var(--mat-sys-level2);
 }
+
+.asset-color {
+  color: var(--mat-sys-tertiary);
+}
+
+.liability-color {
+  color: var(--mat-sys-error);
+}

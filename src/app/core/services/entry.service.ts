@@ -1,115 +1,187 @@
-import { Injectable } from '@angular/core';
-import { Entry } from '../models/entry.model';
-import { GlobalEvents } from '../utils/global-events';
-import { DatabaseService } from './database.service';
-import { GlobalEventService } from './global-event.service';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
+import { Entry, GroupedEntry } from "../models/entry.model";
+import { DatabaseService } from "./database.service";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class EntryService {
-  constructor(
-    private databaseService: DatabaseService,
-    private globalEventService: GlobalEventService
-  ) {}
+  private entriesSubject = new BehaviorSubject<Entry[]>([]);
+  public entries$ = this.entriesSubject.asObservable();
 
-  async addEntry(entry: Entry) {
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
-    await this.databaseService.entries.add(entry);
+  constructor(private databaseService: DatabaseService) {
+    this.loadEntries();
   }
 
-  async getEntries(): Promise<Entry[]> {
+  private async loadEntries() {
+    const entries = await this.databaseService.entries.toArray();
+    this.entriesSubject.next(entries);
+  }
+
+  /**
+   * Validates an entry
+   * @param entry Entry to validate
+   * @param isUpdate Whether this is for an update operation
+   * @throws Error if any validation fails
+   */
+  private async validateEntry(entry: Entry, isUpdate = false): Promise<void> {
+    // Basic validations
+    if (isUpdate && !entry.id) {
+      throw new Error("Cannot update an entry without an ID");
+    }
+
+    if (!entry.date) {
+      throw new Error("Date is required");
+    }
+
+    if (!entry.accountId) {
+      throw new Error("Account ID is required");
+    }
+
+    if (entry.balance === undefined) {
+      throw new Error("Balance is required");
+    }
+
+    if (entry.balance < 0) {
+      throw new Error("Balance cannot be negative");
+    }
+
+    if (!isUpdate) {
+      // Check if entry already exists for the same date and account ID
+      const exists = await this.databaseService.entries
+        .where("date")
+        .equals(entry.date)
+        .and((e) => e.accountId === entry.accountId)
+        .count();
+
+      if (exists > 0) {
+        throw new Error("An entry for this date and account ID already exists");
+      }
+    }
+  }
+
+  async add(entry: Entry): Promise<number> {
+    await this.validateEntry(entry);
+
+    const id = await this.databaseService.entries.add(entry);
+    await this.loadEntries();
+
+    return id;
+  }
+
+  async get(id: number): Promise<Entry | undefined> {
+    return await this.databaseService.entries.get(id);
+  }
+
+  async getByAccountIdAndDate(
+    id: number,
+    date: string
+  ): Promise<Entry | undefined> {
+    return await this.databaseService.entries
+      .where("date")
+      .equals(date)
+      .and((e) => e.accountId === id)
+      .first();
+  }
+
+  async getLatestByAccountId(id: number): Promise<Entry | undefined> {
+    return await this.databaseService.entries
+      .where("accountId")
+      .equals(id)
+      .reverse()
+      .sortBy("date")
+      .then((entries) => (entries.length > 0 ? entries[0] : undefined));
+  }
+
+  async getAccountBalance(
+    accountId: number,
+    date: string
+  ): Promise<number | undefined> {
+    const entry = await this.databaseService.entries
+      .where("date")
+      .equals(date)
+      .and((e) => e.accountId === accountId)
+      .first();
+
+    return entry ? entry.balance : undefined;
+  }
+
+  async getAll(): Promise<Entry[]> {
     return await this.databaseService.entries.toArray();
   }
 
-  async getEntriesTotal(): Promise<number> {
-    return await this.databaseService.entries.count();
+  async getAllWhere(predicate: (entry: Entry) => boolean): Promise<Entry[]> {
+    return await this.databaseService.entries.filter(predicate).toArray();
   }
 
-  async getEntryByAccountAndDate(
-    accountId: number,
-    date: string
-  ): Promise<Entry | null> {
-    try {
-      const entries = await this.getEntries();
-      return (
-        entries.find(
-          (entry) => entry.accountId === accountId && entry.date === date
-        ) || null
+  async getAllGrouped(): Promise<GroupedEntry[]> {
+    const entries = await this.databaseService.entries.toArray();
+    const groupedEntries: GroupedEntry[] = [];
+
+    entries.forEach((entry) => {
+      const existingGroup = groupedEntries.find(
+        (group) => group.date === entry.date
       );
-    } catch (error) {
-      console.error('Error fetching entry:', error);
-      throw error;
+
+      if (existingGroup) {
+        existingGroup.entries.push(entry);
+      } else {
+        groupedEntries.push({ date: entry.date, entries: [entry] });
+      }
+    });
+
+    return groupedEntries;
+  }
+
+  async update(entryId: number, entry: Partial<Entry>): Promise<number> {
+    const existingEntry = await this.databaseService.entries.get(entryId);
+
+    if (!existingEntry) {
+      throw new Error(`Entry with ID ${entryId} not found.`);
     }
-  }
 
-  /**
-   *
-   * @param accountId
-   * @returns Returns the latest entry for the given account
-   */
-  async getLastEntry(accountId: number): Promise<Entry | null> {
-    const entries = await this.getEntries();
-    return entries
-      .filter((entry) => entry.accountId === accountId)
-      .sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      )[0];
-  }
+    const updatedEntry: Entry = {
+      ...existingEntry,
+      ...entry
+    };
 
-  /**
-   * Returns the account balance for the entry on the latest date
-   * @param accountId
-   * @returns
-   */
-  async getAccountBalance(accountId: number): Promise<number> {
-    const entries = await this.getEntries();
-    const latestEntry = entries
-      .filter((entry) => entry.accountId === accountId)
-      .sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      )[0];
+    await this.validateEntry(updatedEntry, true);
 
-    return latestEntry ? latestEntry.balance : 0;
-  }
-
-  /**
-   *
-   * @param date MM/DD/YYYY
-   * @returns
-   */
-  async entryExists(date: string): Promise<boolean> {
-    return (
-      (await this.databaseService.entries.where('date').equals(date).count()) >
-      0
+    const updatedId = await this.databaseService.entries.update(
+      updatedEntry.id!,
+      updatedEntry
     );
+
+    await this.loadEntries();
+
+    return updatedId;
   }
 
-  async updateEntry(entry: Entry) {
-    if (!entry.id) {
-      throw new Error('Cannot update an entry without an ID');
+  async remove(id: number) {
+    // Check if entry exists
+    const existingEntry = await this.databaseService.entries.get(id);
+
+    if (!existingEntry) {
+      throw new Error("Entry not found");
     }
 
-    await this.databaseService.entries.update(entry.id, entry);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
-  }
-
-  async deleteEntry(id: number) {
     await this.databaseService.entries.delete(id);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
+    await this.loadEntries();
   }
 
-  /**
-   *
-   * @param date MM/DD/YYYY
-   */
-  async deleteEntries(date: string) {
-    await this.databaseService.entries.where('date').equals(date).delete();
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
-  }
+  async removeAllOnDate(date: string) {
+    // Check if entry exists
+    const existingEntries = await this.databaseService.entries
+      .where("date")
+      .equals(date)
+      .toArray();
 
-  async deleteAllEntries() {
-    await this.databaseService.entries.clear();
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ENTRIES);
+    if (existingEntries.length === 0) {
+      throw new Error("No entries found for the specified date");
+    }
+
+    await this.databaseService.entries.where("date").equals(date).delete();
+    await this.loadEntries();
   }
 }

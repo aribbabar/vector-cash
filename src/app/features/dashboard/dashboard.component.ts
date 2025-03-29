@@ -1,26 +1,25 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { AccountCategory } from '../../core/models/account-category.model';
-import { AccountCategoryService } from '../../core/services/account-category.service';
+import { CommonModule } from "@angular/common";
+import { Component, OnInit } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { MatCardModule } from "@angular/material/card";
+import { MatDialog, MatDialogModule } from "@angular/material/dialog";
+import { MatIconModule } from "@angular/material/icon";
+import { AccountCategory } from "../../core/models/account-category.model";
+import { AccountCategoryService } from "../../core/services/account-category.service";
 import {
   FormattedAccount,
   FormattedDataService
-} from '../../core/services/formatted-data.service';
-import { GlobalEventService } from '../../core/services/global-event.service';
-import { AccountCategoriesComponent } from '../account-categories/account-categories.component';
-import { AccountCategoryDialogComponent } from '../account-category-dialog/account-category-dialog.component';
-import { AccountDialogComponent } from '../account-dialog/account-dialog.component';
-import { AccountsComponent } from '../accounts/accounts.component';
-import { ChartComponent } from '../chart/chart.component';
-import { EntriesComponent } from '../entries/entries.component';
-import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
+} from "../../core/services/formatted-data.service";
+import { AccountCategoriesComponent } from "../account-categories/account-categories.component";
+import { AccountCategoryDialogComponent } from "../account-category-dialog/account-category-dialog.component";
+import { AccountDialogComponent } from "../account-dialog/account-dialog.component";
+import { AccountsComponent } from "../accounts/accounts.component";
+import { ChartComponent } from "../chart/chart.component";
+import { EntriesComponent } from "../entries/entries.component";
+import { EntryDialogComponent } from "../entry-dialog/entry-dialog.component";
 
 @Component({
-  selector: 'app-dashboard',
+  selector: "app-dashboard",
   standalone: true,
   imports: [
     MatButtonModule,
@@ -34,8 +33,8 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
     AccountCategoriesComponent,
     ChartComponent
   ],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  templateUrl: "./dashboard.component.html",
+  styleUrl: "./dashboard.component.css"
 })
 export class DashboardComponent implements OnInit {
   activeAccounts: FormattedAccount[] = [];
@@ -46,25 +45,17 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private dialog: MatDialog,
-    private globalEventService: GlobalEventService,
     private accountCategoryService: AccountCategoryService,
     private formattedDataService: FormattedDataService
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.activeAccounts = await this.formattedDataService.getFormattedAccounts(
-      true
-    );
-    this.categories = await this.accountCategoryService.getAccountCategories();
+    this.activeAccounts =
+      await this.formattedDataService.getFormattedAccounts(true);
+    this.categories = await this.accountCategoryService.getAll();
 
     // Calculate financial totals when data is loaded
     this.calculateFinancialTotals();
-
-    this.globalEventService.events$.subscribe((event) => {
-      if (event) {
-        this.calculateFinancialTotals();
-      }
-    });
   }
 
   calculateFinancialTotals(): void {
@@ -74,7 +65,7 @@ export class DashboardComponent implements OnInit {
         const category = this.categories.find(
           (cat) => cat.id === account.category!.id
         );
-        return category?.type === 'Asset';
+        return category?.type === "Asset";
       })
       .reduce((total, account) => total + account.balance, 0);
 
@@ -84,7 +75,7 @@ export class DashboardComponent implements OnInit {
         const category = this.categories.find(
           (cat) => cat.id === account.category!.id
         );
-        return category?.type === 'Liability';
+        return category?.type === "Liability";
       })
       .reduce((total, account) => total + account.balance, 0);
 
@@ -95,21 +86,21 @@ export class DashboardComponent implements OnInit {
   openEntryDialog(): void {
     this.blurActiveElement();
     this.dialog.open(EntryDialogComponent, {
-      width: '500px'
+      width: "500px"
     });
   }
 
   openAccountDialog(): void {
     this.blurActiveElement();
     this.dialog.open(AccountDialogComponent, {
-      width: '500px'
+      width: "500px"
     });
   }
 
   openCategoryDialog(): void {
     this.blurActiveElement();
     this.dialog.open(AccountCategoryDialogComponent, {
-      width: '500px'
+      width: "500px"
     });
   }
 

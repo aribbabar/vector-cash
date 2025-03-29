@@ -1,33 +1,25 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import {
-  MatPaginator,
-  MatPaginatorModule,
-  PageEvent
-} from '@angular/material/paginator';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { AccountCategory } from '../../core/models/account-category.model';
-import { Account } from '../../core/models/account.model';
-import { AccountCategoryService } from '../../core/services/account-category.service';
-import { AccountService } from '../../core/services/account.service';
-import {
-  FormattedDataService,
-  FormattedEntry
-} from '../../core/services/formatted-data.service';
-import { GlobalEventService } from '../../core/services/global-event.service';
-import { GlobalEvents } from '../../core/utils/global-events';
-import { DeleteDialogComponent } from '../delete-dialog/delete-dialog.component';
-import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
+import { CommonModule, CurrencyPipe, DatePipe } from "@angular/common";
+import { Component, OnInit, ViewChild } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
+import { MatDialog } from "@angular/material/dialog";
+import { MatIconModule } from "@angular/material/icon";
+import { MatPaginator, MatPaginatorModule } from "@angular/material/paginator";
+import { MatSelectModule } from "@angular/material/select";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatSort, MatSortModule } from "@angular/material/sort";
+import { MatTableDataSource, MatTableModule } from "@angular/material/table";
+import { MatTooltipModule } from "@angular/material/tooltip";
+import { AccountCategory } from "../../core/models/account-category.model";
+import { Account } from "../../core/models/account.model";
+import { GroupedEntry } from "../../core/models/entry.model";
+import { AccountCategoryService } from "../../core/services/account-category.service";
+import { AccountService } from "../../core/services/account.service";
+import { EntryService } from "../../core/services/entry.service";
+import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
+import { EntryDialogComponent } from "../entry-dialog/entry-dialog.component";
 
 @Component({
-  selector: 'app-entries',
+  selector: "app-entries",
   standalone: true,
   imports: [
     MatTableModule,
@@ -41,193 +33,182 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
     CurrencyPipe,
     CommonModule
   ],
-  templateUrl: './entries.component.html',
-  styleUrl: './entries.component.css'
+  templateUrl: "./entries.component.html",
+  styleUrl: "./entries.component.css"
 })
 export class EntriesComponent implements OnInit {
-  displayedColumns: string[] = ['date'];
-  dataSource = new MatTableDataSource<FormattedEntry>([]);
+  displayedColumns: string[] = ["date"];
+  dataSource: MatTableDataSource<GroupedEntry> =
+    new MatTableDataSource<GroupedEntry>([]);
+  groupedEntries: GroupedEntry[] = [];
+  accounts: Account[] = [];
+  accountCategories: AccountCategory[] = [];
   totalEntries = 0;
   pageSize = 5;
   pageIndex = 0;
-  accounts: Account[] = [];
-  accountCategories: AccountCategory[] = [];
-  formattedEntries: FormattedEntry[] = [];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
-    private globalEventService: GlobalEventService,
+    private entryService: EntryService,
     private accountService: AccountService,
-    public accountCategoryService: AccountCategoryService,
-    private formattedData: FormattedDataService,
+    private accountCategoryService: AccountCategoryService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   async ngOnInit(): Promise<void> {
-    await this.initializeData();
-    this.setupTable();
-    this.setupEventListeners();
-  }
+    // Load initial data before subscribing to changes
+    this.accounts = await this.accountService.getAll();
+    this.accountCategories = await this.accountCategoryService.getAll();
+    this.groupedEntries = await this.entryService.getAllGrouped();
 
-  private async initializeData(): Promise<void> {
-    // Load data in parallel for better performance
-    const [accounts, categories, entries] = await Promise.all([
-      this.accountService.getAccounts(),
-      this.accountCategoryService.getAccountCategories(),
-      this.formattedData.getFormattedEntries()
-    ]);
+    this.updateDisplayedColumns();
 
-    this.accounts = accounts;
-    this.accountCategories = categories;
-    this.formattedEntries = entries;
-  }
-
-  private setupTable(): void {
-    // Separate accounts into assets and liabilities
-    const assetAccounts = this.accounts.filter((account) => {
-      const category = this.accountCategories.find(
-        (cat) => cat.id === account.categoryId
-      );
-      return category?.type === 'Asset';
+    // Now subscribe to future changes
+    this.entryService.entries$.subscribe(async () => {
+      this.groupedEntries = await this.entryService.getAllGrouped();
+      this.updateTableData();
     });
 
-    const liabilityAccounts = this.accounts.filter((account) => {
-      const category = this.accountCategories.find(
-        (cat) => cat.id === account.categoryId
-      );
-      return category?.type === 'Liability';
+    this.accountService.accounts$.subscribe((accounts) => {
+      this.accounts = accounts;
+      this.updateDisplayedColumns();
+      this.updateTableData();
     });
 
-    // Build columns with date first, then assets, then liabilities, then actions
-    this.displayedColumns = [
-      'date',
-      ...assetAccounts.map((account) => account.id!.toString()),
-      ...liabilityAccounts.map((account) => account.id!.toString()),
-      'actions'
-    ];
+    this.accountCategoryService.accountCategories$.subscribe((categories) => {
+      this.accountCategories = categories;
+      this.updateDisplayedColumns();
+      this.updateTableData();
+    });
+  }
 
-    this.dataSource.data = this.formattedEntries;
-    this.totalEntries = this.formattedEntries.length;
+  ngAfterViewInit() {
+    this.configureSort();
+    this.updateDisplayedColumns();
+    this.updateTableData();
+  }
 
-    // Apply sorting after waiting for ViewChild to initialize
-    setTimeout(() => {
-      this.dataSource.paginator = this.paginator;
-      this.dataSource.sort = this.sort;
+  private configureSort(): void {
+    // Set up custom sorting logic
+    this.dataSource.sortingDataAccessor = (
+      item: GroupedEntry,
+      property: string
+    ) => {
+      if (property === "date") {
+        return new Date(item.date).getTime();
+      }
 
-      // Custom sorting for non-standard columns (especially for account balances)
-      this.dataSource.sortingDataAccessor = (
-        entry: FormattedEntry,
-        columnId: string
-      ) => {
-        if (columnId === 'date') {
-          return new Date(entry.date).getTime(); // Convert to timestamp for date sorting
-        }
+      // For account columns, return the amount or 0 if not found
+      const accountId = Number(property);
+      if (!isNaN(accountId)) {
+        const entry = item.entries.find((e) => e.accountId === accountId);
+        return entry ? entry.balance : 0;
+      }
 
-        // For account columns
-        const accountId = parseInt(columnId, 10);
-        if (!isNaN(accountId)) {
-          const accountEntry = entry.accounts.find(
-            (acc) => acc.id === accountId
-          );
-          return accountEntry ? accountEntry.balance : 0;
-        }
+      // Fallback to generic accessor
+      return this.getPropertyValue(item, property);
+    };
+  }
 
-        return 0;
-      };
+  // Helper method to safely access nested properties
+  private getPropertyValue(item: any, property: string): string | number {
+    const value = item[property as keyof typeof item];
+    if (typeof value === "string" || typeof value === "number") {
+      return value;
+    }
+    return "";
+  }
 
-      // Set initial sort
+  private updateDisplayedColumns(): void {
+    // Start with date column
+    this.displayedColumns = ["date"];
+
+    // Add account columns
+    if (this.accounts && this.accounts.length > 0) {
+      // Add each account as a column
+      this.accounts.forEach((account) => {
+        this.displayedColumns.push(account.id!.toString());
+      });
+    }
+
+    // Add actions column last
+    this.displayedColumns.push("actions");
+  }
+
+  private updateTableData(): void {
+    // Update the data source
+    this.dataSource.data = this.groupedEntries;
+    this.totalEntries = this.groupedEntries.length;
+
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+
+    // Apply default sort by date in descending order (newest first)
+    if (this.sort && !this.sort.active) {
       this.sort.sort({
-        id: 'date',
-        start: 'desc',
+        id: "date",
+        start: "desc",
         disableClear: false
       });
-
-      // Ensure the sort is applied
-      this.dataSource.sort = this.sort;
-    });
+    }
   }
 
-  private setupEventListeners(): void {
-    this.globalEventService.events$.subscribe((event) => {
-      if (event.name === GlobalEvents.REFRESH_ENTRIES) {
-        this.refreshEntries();
-      } else if (event.name === GlobalEvents.REFRESH_ACCOUNTS) {
-        this.refreshAccounts();
-      } else if (event.name === GlobalEvents.REFRESH_CATEGORIES) {
-        this.refreshCategories();
-      }
-    });
+  getAccountEntryAmount(
+    groupedEntry: GroupedEntry,
+    accountId: number
+  ): number | null {
+    const entry = groupedEntry.entries.find((e) => e.accountId === accountId);
+    return entry ? entry.balance : null;
   }
 
-  getAccountCategory(categoryId: number): string {
-    return (
-      this.accountCategories
-        .find((category) => category.id === categoryId)
-        ?.toString() || ''
+  getAccountCategoryClass(accountId: number): string {
+    const account = this.accounts.find((a) => a.id === accountId);
+    if (!account) return "";
+
+    const accountCategory = this.accountCategories.find(
+      (c) => c.id === account.categoryId
     );
+
+    if (accountCategory?.type === "Asset") {
+      return "asset-color";
+    } else if (accountCategory?.type === "Liability") {
+      return "liability-color";
+    }
+
+    return "";
   }
 
-  getAccountBalance(entry: FormattedEntry, accountId: number): number {
-    const accountEntry = entry.accounts.find(
-      (account) => account.id === accountId
-    );
-    return accountEntry ? accountEntry.balance : 0;
-  }
-
-  loadEntries(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-  }
-
-  openUpdateDialog(entry: FormattedEntry): void {
+  openUpdateDialog(entry: GroupedEntry): void {
     const dialogRef = this.dialog.open(EntryDialogComponent, {
       data: { entry: entry }
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.snackBar.open('Entry updated', 'Dismiss', { duration: 5000 });
+        this.snackBar.open("Entry updated", "Dismiss", { duration: 5000 });
       }
     });
   }
 
-  openDeleteDialog(entry: FormattedEntry): void {
+  openDeleteDialog(entry: GroupedEntry): void {
     const dialogRef = this.dialog.open(DeleteDialogComponent);
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.deleteEntry(entry);
+        this.removeEntries(entry);
       }
     });
   }
 
-  async deleteEntry(entry: FormattedEntry): Promise<void> {
+  async removeEntries(entry: GroupedEntry): Promise<void> {
     try {
-      await this.formattedData.deleteFormattedEntries(entry.date);
-      this.snackBar.open('Entry deleted', 'Dismiss', { duration: 5000 });
-      await this.refreshEntries();
+      await this.entryService.removeAllOnDate(entry.date);
+      this.snackBar.open("Entry deleted", "Dismiss", { duration: 5000 });
     } catch (error) {
-      console.error('Error deleting entry:', error);
-      this.snackBar.open('Error deleting entry', 'Dismiss', { duration: 5000 });
+      console.error("Error deleting entry:", error);
+      this.snackBar.open("Error deleting entry", "Dismiss", { duration: 5000 });
     }
-  }
-
-  async refreshEntries(): Promise<void> {
-    this.formattedEntries = await this.formattedData.getFormattedEntries();
-    this.totalEntries = this.formattedEntries.length;
-    this.dataSource.data = this.formattedEntries;
-  }
-
-  async refreshAccounts(): Promise<void> {
-    this.accounts = await this.accountService.getAccounts();
-    // Reconfigure table to reflect updated accounts
-    this.setupTable();
-  }
-
-  async refreshCategories(): Promise<void> {
-    this.accountCategories =
-      await this.accountCategoryService.getAccountCategories();
   }
 }

@@ -1,12 +1,12 @@
-import { Injectable } from '@angular/core';
-import Dexie, { Table } from 'dexie';
-import { AccountCategory } from '../models/account-category.model';
-import { Account } from '../models/account.model';
-import { Entry } from '../models/entry.model';
-import { SeedDataGenerator } from '../utils/seed-data-generator';
+import { Injectable } from "@angular/core";
+import Dexie, { Table } from "dexie";
+import { AccountCategory } from "../models/account-category.model";
+import { Account } from "../models/account.model";
+import { Entry } from "../models/entry.model";
+import { SeedDataGenerator } from "../utils/seed-data-generator";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class DatabaseService extends Dexie {
   accounts!: Table<Account, number>;
@@ -14,19 +14,14 @@ export class DatabaseService extends Dexie {
   entries!: Table<Entry, number>;
 
   constructor() {
-    super('VectorCashDB');
+    super("VectorCashDB");
     this.version(1).stores({
-      accountCategories: '++id, name, type, description, isActive',
-      accounts: '++id, name, categoryId, isActive',
-      entries: '++id, date, accountId, balance'
+      accountCategories: "++id, &name, type, description, isActive",
+      accounts: "++id, &name, categoryId, isActive",
+      entries: "++id, date, accountId, balance"
     });
 
-    // Map tables to classes
-    this.accountCategories.mapToClass(AccountCategory);
-    this.accounts.mapToClass(Account);
-    this.entries.mapToClass(Entry);
-
-    this.seedDatabase();
+    // this.seedDatabase();
   }
 
   async seedDatabase() {
@@ -60,5 +55,6 @@ export class DatabaseService extends Dexie {
 
   async deleteDatabase() {
     await this.delete();
+    await this.open();
   }
 }

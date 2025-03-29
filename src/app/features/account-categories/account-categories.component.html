@@ -1,9 +1,9 @@
 <div class="account-categories-container">
   <h2>Account Categories</h2>
 
-  @if (accountCategories.length > 0) {
+  @if (activeAccountCategories.length > 0) {
     <div class="category-list">
-      @for (category of accountCategories; track category) {
+      @for (category of activeAccountCategories; track category) {
         <mat-card
           class="category-card"
           [ngClass]="{

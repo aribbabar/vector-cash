@@ -1,90 +1,118 @@
-import { Injectable } from '@angular/core';
-import { AccountCategory } from '../models/account-category.model';
-import { GlobalEvents } from '../utils/global-events';
-import { DatabaseService } from './database.service';
-import { GlobalEventService } from './global-event.service';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
+import { AccountCategory } from "../models/account-category.model";
+import { DatabaseService } from "./database.service";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class AccountCategoryService {
-  constructor(
-    private databaseService: DatabaseService,
-    private globalEventService: GlobalEventService
-  ) {}
+  private accountCategoriesSubject = new BehaviorSubject<AccountCategory[]>([]);
+  public accountCategories$ = this.accountCategoriesSubject.asObservable();
 
-  /**
-   * Adds a new account category to the database.
-   *
-   * @param {AccountCategory} accountCategory - The account category to be added.
-   * @throws {Error} If an account category with the same name already exists.
-   * @returns {Promise<void>} A promise that resolves when the account category has been added.
-   */
-  async addAccountCategory(accountCategory: AccountCategory) {
-    if (
-      (await this.databaseService.accountCategories
-        .where('name')
-        .equals(accountCategory.name)
-        .count()) > 0
-    ) {
-      throw new Error('An account category with this name already exists');
-    }
-
-    await this.databaseService.accountCategories.add(accountCategory);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
+  constructor(private databaseService: DatabaseService) {
+    this.loadCategories();
   }
 
-  async getAccountCategory(id: number): Promise<AccountCategory | undefined> {
+  private async loadCategories() {
+    const categories = await this.databaseService.accountCategories.toArray();
+    this.accountCategoriesSubject.next(categories);
+  }
+
+  private validateCategory(
+    accountCategory: AccountCategory,
+    requireId: boolean = false
+  ) {
+    // Set default values
+    if (accountCategory.isActive === undefined) {
+      accountCategory.isActive = true;
+    }
+
+    if (accountCategory.description === undefined) {
+      accountCategory.description = "";
+    }
+
+    // Data validation
+    if (requireId && !accountCategory.id) {
+      throw new Error("Account category ID is required for update.");
+    }
+
+    if (!accountCategory.name || accountCategory.name.trim() === "") {
+      throw new Error("Account category name cannot be empty.");
+    }
+  }
+
+  async add(accountCategory: AccountCategory): Promise<number> {
+    this.validateCategory(accountCategory);
+
+    const id =
+      await this.databaseService.accountCategories.add(accountCategory);
+    await this.loadCategories();
+
+    return id;
+  }
+
+  async get(id: number): Promise<AccountCategory | undefined> {
     return await this.databaseService.accountCategories.get(id);
   }
 
-  async getAccountCategories(): Promise<AccountCategory[]> {
+  async getAll(): Promise<AccountCategory[]> {
     return await this.databaseService.accountCategories.toArray();
   }
 
-  async getActiveAccountCategories(): Promise<AccountCategory[]> {
-    return await this.databaseService.accountCategories
-      .filter((category) => category.isActive === true)
-      .toArray();
+  async getAllWhere(
+    predicate: (category: AccountCategory) => boolean
+  ): Promise<AccountCategory[]> {
+    const accountCategories =
+      await this.databaseService.accountCategories.toArray();
+
+    return accountCategories.filter(predicate);
   }
 
-  async getLiabilityAccountCategories(): Promise<AccountCategory[]> {
-    return await this.databaseService.accountCategories
-      .where('type')
-      .equals('Liability')
-      .toArray();
-  }
+  async update(
+    accountCategoryId: number,
+    accountCategory: Partial<AccountCategory>
+  ): Promise<number> {
+    const existingCategory =
+      await this.databaseService.accountCategories.get(accountCategoryId);
 
-  async getInactiveAccountCategories(): Promise<AccountCategory[]> {
-    return await this.databaseService.accountCategories
-      .filter((category) => category.isActive === false)
-      .toArray();
-  }
-
-  async updateAccountCategory(accountCategory: AccountCategory) {
-    if (!accountCategory.id) {
-      throw new Error('Cannot update an account category without an ID');
+    if (!existingCategory) {
+      throw new Error("Account category does not exist.");
     }
 
-    await this.databaseService.accountCategories.update(
-      accountCategory.id,
-      accountCategory
+    const updatedCategory = {
+      ...existingCategory,
+      ...accountCategory
+    };
+
+    this.validateCategory(updatedCategory, true);
+
+    const updatedId = await this.databaseService.accountCategories.update(
+      accountCategoryId,
+      updatedCategory
     );
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
+
+    await this.loadCategories();
+
+    return updatedId;
   }
 
-  async setAccountCategoryActiveStatus(id: number, isActive: boolean) {
-    await this.databaseService.accountCategories.update(id, { isActive });
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
-  }
+  async deactivate(id: number) {
+    // Check if any active accounts are pointing to this category using the categoryId FK
+    const accountsInCategory = await this.databaseService.accounts
+      .where("categoryId")
+      .equals(id)
+      .and((account) => account.isActive === true)
+      .toArray();
 
-  async deleteAccountCategory(id: number) {
-    await this.databaseService.accountCategories.delete(id);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
-  }
+    if (accountsInCategory.length > 0) {
+      throw new Error("Cannot remove a category that has active accounts");
+    }
 
-  async deleteAllAccountCategories() {
-    await this.databaseService.accountCategories.clear();
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_CATEGORIES);
+    await this.databaseService.accountCategories.update(id, {
+      isActive: false
+    });
+
+    await this.loadCategories();
   }
 }

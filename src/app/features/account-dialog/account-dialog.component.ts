@@ -1,30 +1,30 @@
-import { CommonModule } from '@angular/common';
-import { Component, Inject, OnInit } from '@angular/core';
+import { CommonModule } from "@angular/common";
+import { Component, Inject, OnInit } from "@angular/core";
 import {
   FormBuilder,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators
-} from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+} from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
 import {
   MAT_DIALOG_DATA,
   MatDialogModule,
   MatDialogRef
-} from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
+} from "@angular/material/dialog";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
-import { AccountCategory } from '../../core/models/account-category.model';
-import { Account } from '../../core/models/account.model';
-import { AccountCategoryService } from '../../core/services/account-category.service';
-import { AccountService } from '../../core/services/account.service';
+import { AccountCategory } from "../../core/models/account-category.model";
+import { Account } from "../../core/models/account.model";
+import { AccountCategoryService } from "../../core/services/account-category.service";
+import { AccountService } from "../../core/services/account.service";
 
 @Component({
-  selector: 'app-account-dialog',
+  selector: "app-account-dialog",
   standalone: true,
   imports: [
     CommonModule,
@@ -36,12 +36,12 @@ import { AccountService } from '../../core/services/account.service';
     MatInputModule,
     MatSelectModule
   ],
-  templateUrl: './account-dialog.component.html',
-  styleUrl: './account-dialog.component.css'
+  templateUrl: "./account-dialog.component.html",
+  styleUrl: "./account-dialog.component.css"
 })
 export class AccountDialogComponent implements OnInit {
   accountForm: FormGroup;
-  categories: AccountCategory[] = [];
+  activeAccountCategories: AccountCategory[] = [];
   isUpdate = false;
 
   constructor(
@@ -53,8 +53,8 @@ export class AccountDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { account: Account }
   ) {
     this.accountForm = this.formBuilder.group({
-      name: ['', [Validators.required]],
-      categoryId: ['', [Validators.required]],
+      name: ["", [Validators.required]],
+      categoryId: ["", [Validators.required]],
       isActive: [true]
     });
 
@@ -70,15 +70,11 @@ export class AccountDialogComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    try {
-      this.categories =
-        await this.accountCategoryService.getActiveAccountCategories();
-    } catch (error) {
-      console.error('Failed to load account categories:', error);
-      this.snackBar.open('Failed to load account categories', 'Dismiss', {
-        duration: 5000
-      });
-    }
+    this.accountCategoryService.accountCategories$.subscribe((categories) => {
+      this.activeAccountCategories = categories.filter(
+        (category) => category.isActive
+      );
+    });
   }
 
   onCancel(): void {
@@ -100,19 +96,19 @@ export class AccountDialogComponent implements OnInit {
 
       if (this.isUpdate && this.data.account.id) {
         // Update existing account
-        account.id = this.data.account.id;
-        await this.accountService.updateAccount(account);
-        this.snackBar.open('Account updated', 'Dismiss', { duration: 5000 });
+        const accountId = this.data.account.id;
+        await this.accountService.update(accountId, account);
+        this.snackBar.open("Account updated", "Dismiss", { duration: 5000 });
       } else {
         // Create new account
-        await this.accountService.addAccount(account);
-        this.snackBar.open('Account created', 'Dismiss', { duration: 5000 });
+        await this.accountService.add(account);
+        this.snackBar.open("Account created", "Dismiss", { duration: 5000 });
       }
 
       this.dialogRef.close(true);
     } catch (error) {
-      console.error('Error saving account:', error);
-      this.snackBar.open('Error saving account', 'Dismiss', { duration: 5000 });
+      console.error("Error saving account:", error);
+      this.snackBar.open("Error saving account", "Dismiss", { duration: 5000 });
     }
   }
 }

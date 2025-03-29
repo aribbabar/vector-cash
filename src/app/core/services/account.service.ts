@@ -1,100 +1,97 @@
-import { Injectable } from '@angular/core';
-import { Account } from '../models/account.model';
-import { GlobalEvents } from '../utils/global-events';
-import { AccountCategoryService } from './account-category.service';
-import { DatabaseService } from './database.service';
-import { GlobalEventService } from './global-event.service';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
+import { Account } from "../models/account.model";
+import { DatabaseService } from "./database.service";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class AccountService {
-  constructor(
-    private databaseService: DatabaseService,
-    private accountCategoryService: AccountCategoryService,
-    private globalEventService: GlobalEventService
-  ) {}
+  private accounts = new BehaviorSubject<Account[]>([]);
+  public accounts$ = this.accounts.asObservable();
 
-  async addAccount(account: Account) {
-    await this.databaseService.accounts.add(account);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
+  constructor(private databaseService: DatabaseService) {
+    this.loadAccounts();
   }
 
-  /**
-   *
-   * @returns All accounts in alphabetical order
-   */
-  async getAccounts(): Promise<Account[]> {
-    return await this.databaseService.accounts.orderBy('name').toArray();
-  }
-
-  /**
-   *
-   * @returns All active accounts
-   */
-  async getActiveAccounts(): Promise<Account[]> {
+  private async loadAccounts() {
     const accounts = await this.databaseService.accounts.toArray();
-    return accounts.filter((account) => account.isActive);
+    this.accounts.next(accounts);
   }
 
-  /**
-   *
-   * @returns All inactive accounts
-   */
-  async getInactiveAccounts(): Promise<Account[]> {
-    const accounts = await this.databaseService.accounts.toArray();
-    return accounts.filter((account) => !account.isActive);
-  }
-
-  async getAccount(id: number): Promise<Account> {
-    const account = await this.databaseService.accounts.get(id);
-
-    if (!account) {
-      throw new Error('Account not found');
+  private validateAccount(account: Account, requireId: boolean = false) {
+    // Set default value
+    if (account.isActive === undefined) {
+      account.isActive = true;
     }
 
-    return account;
-  }
-
-  /**
-   *
-   * @param categoryId Category ID
-   * @returns If there are active accounts in the category
-   */
-  async hasActiveAccountsInCategory(categoryId: number): Promise<boolean> {
-    const accounts = await this.databaseService.accounts
-      .where('categoryId')
-      .equals(categoryId)
-      .toArray();
-    return accounts.some((account) => account.isActive);
-  }
-
-  async updateAccount(account: Account) {
-    await this.databaseService.accounts.update(account.id!, account);
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
-  }
-
-  async deactivateAccount(id: number) {
-    const account = await this.getAccount(id);
-    account.isActive = false;
-    await this.updateAccount(account);
-  }
-
-  async restoreAccount(id: number) {
-    const account = await this.getAccount(id);
-    const accountCategory =
-      await this.accountCategoryService.getAccountCategory(account.categoryId);
-
-    if (accountCategory && !accountCategory.isActive) {
-      throw new Error('Cannot restore account because category is inactive');
+    // Data validation
+    if (requireId && !account.id) {
+      throw new Error("Account ID is required for update.");
     }
 
-    account.isActive = true;
-    await this.updateAccount(account);
+    if (!account.name || account.name.trim() === "") {
+      throw new Error("Account name cannot be empty.");
+    }
+
+    if (!account.categoryId) {
+      throw new Error("Category ID is required.");
+    }
   }
 
-  async deleteAllAccounts() {
-    await this.databaseService.accounts.clear();
-    this.globalEventService.emitEvent(GlobalEvents.REFRESH_ACCOUNTS);
+  async add(account: Account): Promise<number> {
+    this.validateAccount(account);
+
+    const id = await this.databaseService.accounts.add(account);
+    await this.loadAccounts();
+
+    return id;
+  }
+
+  async get(id: number): Promise<Account | undefined> {
+    return await this.databaseService.accounts.get(id);
+  }
+
+  async getAll(): Promise<Account[]> {
+    return await this.databaseService.accounts.toArray();
+  }
+
+  async getAllWhere(
+    predicate: (account: Account) => boolean
+  ): Promise<Account[]> {
+    const accounts = await this.databaseService.accounts.toArray();
+    return accounts.filter(predicate);
+  }
+
+  async update(accountId: number, account: Partial<Account>): Promise<number> {
+    const existingAccount = await this.databaseService.accounts.get(accountId);
+
+    if (!existingAccount) {
+      throw new Error(`Account with ID ${accountId} not found.`);
+    }
+
+    const updatedAccount: Account = {
+      ...existingAccount,
+      ...account
+    };
+
+    this.validateAccount(updatedAccount, true);
+
+    const updatedId = await this.databaseService.accounts.update(
+      updatedAccount.id!,
+      updatedAccount
+    );
+
+    await this.loadAccounts();
+
+    return updatedId;
+  }
+
+  async deactivate(id: number) {
+    await this.databaseService.accounts.update(id, {
+      isActive: false
+    });
+
+    await this.loadAccounts();
   }
 }

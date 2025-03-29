@@ -1,10 +1,6 @@
-export class Account {
+export interface Account {
   id?: number;
-  name!: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
-  categoryId!: number; // FK to AccountCategory
-  isActive: boolean = true;
-
-  toString(): string {
-    return this.name;
-  }
+  name: string; // e.g, "Chase Checking", "Discover it", "Fidelity Brokerage"
+  categoryId: number; // FK to AccountCategory
+  isActive?: boolean;
 }

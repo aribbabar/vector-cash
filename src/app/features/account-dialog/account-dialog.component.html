@@ -20,7 +20,7 @@
       <mat-form-field appearance="fill" class="full-width">
         <mat-label>Account Category</mat-label>
         <mat-select formControlName="categoryId">
-          @for (category of categories; track category) {
+          @for (category of activeAccountCategories; track category) {
             <mat-option [value]="category.id">
               {{ category.name }}
             </mat-option>

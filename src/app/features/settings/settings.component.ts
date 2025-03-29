@@ -1,22 +1,22 @@
-import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTabsModule } from '@angular/material/tabs';
-import { AccountCategory } from '../../core/models/account-category.model';
-import { Account } from '../../core/models/account.model';
-import { Entry } from '../../core/models/entry.model';
-import { AccountCategoryService } from '../../core/services/account-category.service';
-import { AccountService } from '../../core/services/account.service';
-import { DatabaseService } from '../../core/services/database.service';
-import { EntryService } from '../../core/services/entry.service';
-import { Theme, ThemeService } from '../../core/services/theme.service';
-import { DeleteDialogComponent } from '../delete-dialog/delete-dialog.component';
+import { CommonModule } from "@angular/common";
+import { Component, ElementRef, ViewChild } from "@angular/core";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
+import { MatCardModule } from "@angular/material/card";
+import { MatDialog, MatDialogModule } from "@angular/material/dialog";
+import { MatExpansionModule } from "@angular/material/expansion";
+import { MatIconModule } from "@angular/material/icon";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatTabsModule } from "@angular/material/tabs";
+import { AccountCategory } from "../../core/models/account-category.model";
+import { Account } from "../../core/models/account.model";
+import { Entry } from "../../core/models/entry.model";
+import { AccountCategoryService } from "../../core/services/account-category.service";
+import { AccountService } from "../../core/services/account.service";
+import { DatabaseService } from "../../core/services/database.service";
+import { EntryService } from "../../core/services/entry.service";
+import { Theme, ThemeService } from "../../core/services/theme.service";
+import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
 
 interface ImportExportData {
   entries: Entry[];
@@ -25,7 +25,7 @@ interface ImportExportData {
 }
 
 @Component({
-  selector: 'app-settings',
+  selector: "app-settings",
   standalone: true,
   imports: [
     CommonModule,
@@ -38,8 +38,8 @@ interface ImportExportData {
     MatIconModule,
     MatDialogModule
   ],
-  templateUrl: './settings.component.html',
-  styleUrl: './settings.component.css'
+  templateUrl: "./settings.component.html",
+  styleUrl: "./settings.component.css"
 })
 export class SettingsComponent {
   entries: Entry[] = [];
@@ -47,10 +47,10 @@ export class SettingsComponent {
   accountCategories: AccountCategory[] = [];
   inactiveAccounts: Account[] = [];
   inactiveAccountCategories: AccountCategory[] = [];
-  themeOptions = ['light', 'dark', 'system'];
-  currentTheme = 'system';
+  themeOptions = ["light", "dark", "system"];
+  currentTheme = "system";
 
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild("fileInput") fileInput!: ElementRef<HTMLInputElement>;
 
   constructor(
     private databaseService: DatabaseService,
@@ -63,51 +63,63 @@ export class SettingsComponent {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.inactiveAccounts = await this.accountService.getInactiveAccounts();
-    this.inactiveAccountCategories =
-      await this.accountCategoryService.getInactiveAccountCategories();
-
-    // Get current theme
     this.themeService.theme$.subscribe((theme) => {
       this.currentTheme = theme;
     });
 
-    this.entries = await this.entryService.getEntries();
-    this.accounts = await this.accountService.getAccounts();
-    this.accountCategories =
-      await this.accountCategoryService.getAccountCategories();
+    this.entryService.entries$.subscribe((entries) => {
+      this.entries = entries;
+    });
+
+    this.accountService.accounts$.subscribe((accounts) => {
+      this.accounts = accounts;
+    });
+
+    this.accountCategoryService.accountCategories$.subscribe((categories) => {
+      this.accountCategories = categories;
+    });
+
+    this.inactiveAccounts = this.accounts.filter(
+      (account) => !account.isActive
+    );
+
+    this.inactiveAccountCategories = this.accountCategories.filter(
+      (category) => !category.isActive
+    );
   }
 
-  async restoreAccount(accountId: number): Promise<void> {
+  async restoreAccount(accountId: number) {
     try {
-      await this.accountService.restoreAccount(accountId);
-      this.inactiveAccounts = this.inactiveAccounts.filter(
-        (account) => account.id !== accountId
-      );
+      await this.accountService.update(accountId, {
+        isActive: true
+      });
 
-      this.snackBar.open('Account restored successfully', 'Close', {
+      this.snackBar.open("Account restored successfully", "Close", {
         duration: 3000
       });
     } catch (error) {
-      console.error('Error restoring account:', error);
-      this.snackBar.open((error as Error).message, 'Close', {
+      console.error("Error restoring account:", error);
+      this.snackBar.open((error as Error).message, "Close", {
         duration: 3000
       });
     }
   }
 
-  restoreCategory(categoryId: number): void {
-    this.accountCategoryService.setAccountCategoryActiveStatus(
-      categoryId,
-      true
-    );
-    this.inactiveAccountCategories = this.inactiveAccountCategories.filter(
-      (category) => category.id !== categoryId
-    );
+  async restoreCategory(categoryId: number) {
+    try {
+      await this.accountCategoryService.update(categoryId, {
+        isActive: true
+      });
 
-    this.snackBar.open('Category restored successfully', 'Close', {
-      duration: 3000
-    });
+      this.snackBar.open("Category restored successfully", "Close", {
+        duration: 3000
+      });
+    } catch (error) {
+      console.error("Error restoring category:", error);
+      this.snackBar.open((error as Error).message, "Close", {
+        duration: 3000
+      });
+    }
   }
 
   exportData(): void {
@@ -117,10 +129,10 @@ export class SettingsComponent {
       accountCategories: this.accountCategories
     };
 
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const url = window.URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `vector-cash-backup-${new Date()
       .toISOString()
@@ -130,7 +142,7 @@ export class SettingsComponent {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 
-    this.snackBar.open('Data exported successfully', 'Close', {
+    this.snackBar.open("Data exported successfully", "Close", {
       duration: 3000
     });
   }
@@ -158,29 +170,29 @@ export class SettingsComponent {
             this.accountCategories.length > 0
           ) {
             throw new Error(
-              'Data already exists. Please delete existing data before importing.'
+              "Data already exists. Please delete existing data before importing."
             );
           }
 
           for (const entry of importedData.entries) {
-            this.entryService.addEntry(entry);
+            this.entryService.add(entry);
           }
 
           for (const account of importedData.accounts) {
-            this.accountService.addAccount(account);
+            this.accountService.add(account);
           }
 
           for (const accountCategory of importedData.accountCategories) {
-            this.accountCategoryService.addAccountCategory(accountCategory);
+            this.accountCategoryService.add(accountCategory);
           }
 
-          this.snackBar.open('Data imported successfully', 'Close', {
+          this.snackBar.open("Data imported successfully", "Close", {
             duration: 3000
           });
         } catch (error) {
-          input.value = '';
-          console.error('Error parsing imported data:', error);
-          this.snackBar.open((error as Error).message, 'Close', {
+          input.value = "";
+          console.error("Error parsing imported data:", error);
+          this.snackBar.open((error as Error).message, "Close", {
             duration: 3000
           });
         }
@@ -193,10 +205,10 @@ export class SettingsComponent {
   confirmDatabaseDeletion(): void {
     const dialogRef = this.dialog.open(DeleteDialogComponent, {
       data: {
-        title: 'Delete Database',
+        title: "Delete Database",
         message: `Are you sure you want to delete the database?`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel'
+        confirmText: "Delete",
+        cancelText: "Cancel"
       }
     });
 
@@ -210,7 +222,7 @@ export class SettingsComponent {
   deleteDatabase(): void {
     this.databaseService.deleteDatabase();
 
-    this.snackBar.open('All data has been deleted', 'Close', {
+    this.snackBar.open("All data has been deleted", "Close", {
       duration: 3000
     });
   }
@@ -218,7 +230,7 @@ export class SettingsComponent {
   changeTheme(theme: string): void {
     const themeToChange = theme as Theme;
     this.themeService.setTheme(themeToChange);
-    this.snackBar.open(`Theme changed to ${themeToChange}`, 'Close', {
+    this.snackBar.open(`Theme changed to ${themeToChange}`, "Close", {
       duration: 3000
     });
   }
