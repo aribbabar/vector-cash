@@ -96,16 +96,17 @@ export class EntryService {
         mostRecentEntry = group;
       }
     }
+
     return mostRecentEntry;
   }
 
-  async getMostRecentByAccountId(id: number): Promise<Entry | undefined> {
-    return await this.databaseService.entries
+  async getMostRecentEntryByAccountId(id: number): Promise<Entry | undefined> {
+    const entries = await this.databaseService.entries
       .where("accountId")
       .equals(id)
-      .reverse()
-      .sortBy("date")
-      .then((entries) => (entries.length > 0 ? entries[0] : undefined));
+      .sortBy("date");
+
+    return entries.length > 0 ? entries[entries.length - 1] : undefined;
   }
 
   async getAccountBalance(

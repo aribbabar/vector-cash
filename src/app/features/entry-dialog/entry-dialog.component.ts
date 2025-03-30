@@ -22,7 +22,6 @@ import {
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
-
 import { AccountCategory } from "../../core/models/account-category.model";
 import { Account } from "../../core/models/account.model";
 import { GroupedEntry } from "../../core/models/entry.model";
@@ -74,13 +73,8 @@ export class EntryDialogComponent implements OnInit {
   async ngOnInit() {
     const groupedEntry = this.data?.entry;
 
-    // Fetch accounts and categories concurrently
-    const [accounts, accountCategories] = await Promise.all([
-      this.accountService.getAll(),
-      this.accountCategoryService.getAll()
-    ]);
-    this.accounts = accounts;
-    this.accountCategories = accountCategories;
+    this.accounts = await this.accountService.getAll();
+    this.accountCategories = await this.accountCategoryService.getAll();
 
     // Build a map for quick lookup of categories by id
     const categoryMap = new Map<number, AccountCategory>();
@@ -102,7 +96,11 @@ export class EntryDialogComponent implements OnInit {
       return 0;
     };
 
+    // Set up accounts form array
+    const accountControls: FormGroup[] = [];
+
     if (this.isUpdateMode) {
+      // Set date from existing entry
       this.entryForm.setControl(
         "date",
         this.formBuilder.control(
@@ -110,49 +108,47 @@ export class EntryDialogComponent implements OnInit {
           Validators.required
         )
       );
-      this.entryForm.setControl("accounts", this.formBuilder.array([]));
 
-      // Populate the form with existing entry data - sorted by category type
+      // Populate from existing entry data - sorted by category type
       const sortedEntries = [...this.data.entry.entries].sort((a, b) => {
         const accountA = this.accounts.find((acc) => acc.id === a.accountId);
         const accountB = this.accounts.find((acc) => acc.id === b.accountId);
         if (!accountA || !accountB) return 0;
 
-        const categoryA = categoryMap.get(accountA.categoryId);
-        const categoryB = categoryMap.get(accountB.categoryId);
-
-        if (categoryA?.type === "Asset" && categoryB?.type !== "Asset")
-          return -1;
-        if (categoryA?.type !== "Asset" && categoryB?.type === "Asset")
-          return 1;
-        return 0;
+        return sortByCategoryType(accountA, accountB);
       });
 
       sortedEntries.forEach((entry) => {
         const account = this.accounts.find((acc) => acc.id === entry.accountId);
         if (!account) return;
         const accountCategory = categoryMap.get(account.categoryId)!;
-        this.accountsArray.push(
+        accountControls.push(
           this.createAccountFormGroup(account, accountCategory, entry.balance)
         );
       });
     } else {
+      // Set default date for new entry
       this.entryForm.setControl(
         "date",
         this.formBuilder.control(new Date(), Validators.required)
       );
-      this.entryForm.setControl("accounts", this.formBuilder.array([]));
 
-      // Sort active accounts by category type using the map
+      // Sort active accounts by category type
       const sortedAccounts = [...this.activeAccounts].sort(sortByCategoryType);
 
       sortedAccounts.forEach((account) => {
         const accountCategory = categoryMap.get(account.categoryId)!;
-        this.accountsArray.push(
+        accountControls.push(
           this.createAccountFormGroup(account, accountCategory)
         );
       });
     }
+
+    // Set the accounts form array once with all controls
+    this.entryForm.setControl(
+      "accounts",
+      this.formBuilder.array(accountControls)
+    );
   }
 
   // Getter for the accounts FormArray

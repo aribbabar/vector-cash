@@ -26,7 +26,10 @@
             <!-- Asset accounts section -->
             <div class="account-type-section">
               <h4 class="type-heading asset-heading">Assets</h4>
-              @for (accountForm of accountsArray.controls; track $index) {
+              @for (
+                accountForm of accountsArray.controls;
+                track accountForm.get("id")?.value
+              ) {
                 @if (
                   accountForm.get("accountCategoryType")?.value === "Asset"
                 ) {
@@ -81,7 +84,10 @@
             <!-- Liability accounts section -->
             <div class="account-type-section">
               <h4 class="type-heading liability-heading">Liabilities</h4>
-              @for (accountForm of accountsArray.controls; track $index) {
+              @for (
+                accountForm of accountsArray.controls;
+                track accountForm.get("id")?.value
+              ) {
                 @if (
                   accountForm.get("accountCategoryType")?.value === "Liability"
                 ) {

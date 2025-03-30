@@ -1,10 +1,10 @@
 import { CommonModule, CurrencyPipe } from "@angular/common";
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Subscription } from "rxjs";
 import { AccountCategory } from "../../core/models/account-category.model";
 import { Account } from "../../core/models/account.model";
+import { Entry } from "../../core/models/entry.model";
 import { AccountCategoryService } from "../../core/services/account-category.service";
 import { AccountService } from "../../core/services/account.service";
 import { EntryService } from "../../core/services/entry.service";
@@ -18,11 +18,10 @@ import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component"
   templateUrl: "./accounts.component.html",
   styleUrl: "./accounts.component.css"
 })
-export class AccountsComponent implements OnInit, OnDestroy {
-  accountsSubscription!: Subscription;
-  accountCategoriesSubscription!: Subscription;
-
+export class AccountsComponent implements OnInit {
+  entries: Entry[] = [];
   activeAccounts: Account[] = [];
+  activeAccountsEntriesMap: Map<Account, Entry> = new Map();
   categories: AccountCategory[] = [];
 
   constructor(
@@ -34,26 +33,37 @@ export class AccountsComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    this.accountsSubscription = this.accountService.accounts$.subscribe(
-      (accounts) => {
-        this.activeAccounts = accounts.filter((account) => account.isActive);
-      }
-    );
+    this.entryService.entries$.subscribe((entries) => {
+      this.entries = entries.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
 
-    this.accountCategoriesSubscription =
-      this.accountCategoryService.accountCategories$.subscribe((categories) => {
-        this.categories = categories;
-      });
+      this.setActiveAccountsEntriesMap();
+    });
+
+    this.accountService.accounts$.subscribe((accounts) => {
+      this.activeAccounts = accounts.filter((account) => account.isActive);
+    });
+
+    this.accountCategoryService.accountCategories$.subscribe((categories) => {
+      this.categories = categories;
+    });
   }
 
-  ngOnDestroy() {
-    if (this.accountsSubscription) {
-      this.accountsSubscription.unsubscribe();
-    }
+  setActiveAccountsEntriesMap() {
+    this.activeAccounts.forEach((account) => {
+      const entry = this.entries.find(
+        (entry) => entry.accountId === account.id
+      );
+      if (entry) {
+        this.activeAccountsEntriesMap.set(account, entry);
+      }
+    });
+  }
 
-    if (this.accountCategoriesSubscription) {
-      this.accountCategoriesSubscription.unsubscribe();
-    }
+  getAccountBalance(accountId: number): number {
+    const entry = this.entries.find((entry) => entry.accountId === accountId);
+    return entry ? entry.balance : 0;
   }
 
   getAssetCategories(): AccountCategory[] {
@@ -94,13 +104,6 @@ export class AccountsComponent implements OnInit, OnDestroy {
     });
   }
 
-  async getAccountBalance(accountId: number): Promise<number> {
-    return (
-      (await this.entryService.getMostRecentByAccountId(accountId))?.balance ??
-      0
-    );
-  }
-
   openDeleteDialog(account: Account): void {
     // Open dialog to delete account
     const dialogRef = this.dialog.open(DeleteDialogComponent);
@@ -110,10 +113,6 @@ export class AccountsComponent implements OnInit, OnDestroy {
         this.deactivateAccount(account);
       }
     });
-  }
-
-  async refreshCategories(): Promise<void> {
-    this.categories = await this.accountCategoryService.getAll();
   }
 
   async deactivateAccount(account: Account) {

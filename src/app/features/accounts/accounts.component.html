@@ -17,7 +17,7 @@
               <div class="account-details">
                 <div class="account-name">{{ account.name }}</div>
                 <div class="account-balance">
-                  {{ getAccountBalance(account.id!) | async | currency }}
+                  {{ getAccountBalance(account.id!) | currency }}
                 </div>
               </div>
               <div class="account-actions">
@@ -51,7 +51,7 @@
               <div class="account-details">
                 <div class="account-name">{{ account.name }}</div>
                 <div class="account-balance">
-                  {{ getAccountBalance(account.id!) | async | currency }}
+                  {{ getAccountBalance(account.id!) | currency }}
                 </div>
               </div>
               <div class="account-actions">
