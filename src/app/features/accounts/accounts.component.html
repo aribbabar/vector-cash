@@ -6,15 +6,18 @@
     <h3>Assets</h3>
 
     <div class="category-group">
-      @for (category of getAssetCategories(); track category) {
+      @for (category of getAssetCategories(); track category.id) {
         <h4>{{ category.name }}</h4>
         <div class="accounts-list">
-          @for (account of getAccountsByCategory(category.id!); track account) {
+          @for (
+            account of getAccountsByCategory(category.id!);
+            track account.id
+          ) {
             <div class="account-card">
               <div class="account-details">
                 <div class="account-name">{{ account.name }}</div>
                 <div class="account-balance">
-                  {{ account.balance | currency }}
+                  {{ getAccountBalance(account.id!) | async | currency }}
                 </div>
               </div>
               <div class="account-actions">
@@ -37,15 +40,18 @@
     <h3>Liabilities</h3>
 
     <div class="category-group">
-      @for (category of getLiabilityCategories(); track category) {
+      @for (category of getLiabilityCategories(); track category.id) {
         <h4>{{ category.name }}</h4>
         <div class="accounts-list">
-          @for (account of getAccountsByCategory(category.id!); track account) {
+          @for (
+            account of getAccountsByCategory(category.id!);
+            track account.id
+          ) {
             <div class="account-card">
               <div class="account-details">
                 <div class="account-name">{{ account.name }}</div>
                 <div class="account-balance">
-                  {{ account.balance | currency }}
+                  {{ getAccountBalance(account.id!) | async | currency }}
                 </div>
               </div>
               <div class="account-actions">

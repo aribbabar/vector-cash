@@ -85,7 +85,21 @@ export class EntryService {
       .first();
   }
 
-  async getLatestByAccountId(id: number): Promise<Entry | undefined> {
+  async getMostRecentGroupedEntry(): Promise<GroupedEntry | undefined> {
+    const groupedEntries = await this.getAllGrouped();
+    let mostRecentEntry: GroupedEntry | undefined;
+    for (const group of groupedEntries) {
+      if (
+        !mostRecentEntry ||
+        new Date(group.date) > new Date(mostRecentEntry.date)
+      ) {
+        mostRecentEntry = group;
+      }
+    }
+    return mostRecentEntry;
+  }
+
+  async getMostRecentByAccountId(id: number): Promise<Entry | undefined> {
     return await this.databaseService.entries
       .where("accountId")
       .equals(id)
@@ -117,21 +131,20 @@ export class EntryService {
 
   async getAllGrouped(): Promise<GroupedEntry[]> {
     const entries = await this.databaseService.entries.toArray();
-    const groupedEntries: GroupedEntry[] = [];
+    const groups = new Map<string, Entry[]>();
 
-    entries.forEach((entry) => {
-      const existingGroup = groupedEntries.find(
-        (group) => group.date === entry.date
-      );
-
-      if (existingGroup) {
-        existingGroup.entries.push(entry);
+    for (const entry of entries) {
+      if (groups.has(entry.date)) {
+        groups.get(entry.date)!.push(entry);
       } else {
-        groupedEntries.push({ date: entry.date, entries: [entry] });
+        groups.set(entry.date, [entry]);
       }
-    });
+    }
 
-    return groupedEntries;
+    return Array.from(groups.entries()).map(([date, entries]) => ({
+      date,
+      entries
+    }));
   }
 
   async update(entryId: number, entry: Partial<Entry>): Promise<number> {

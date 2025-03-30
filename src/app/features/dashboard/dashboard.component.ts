@@ -5,11 +5,11 @@ import { MatCardModule } from "@angular/material/card";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { MatIconModule } from "@angular/material/icon";
 import { AccountCategory } from "../../core/models/account-category.model";
+import { Account } from "../../core/models/account.model";
+import { GroupedEntry } from "../../core/models/entry.model";
 import { AccountCategoryService } from "../../core/services/account-category.service";
-import {
-  FormattedAccount,
-  FormattedDataService
-} from "../../core/services/formatted-data.service";
+import { AccountService } from "../../core/services/account.service";
+import { EntryService } from "../../core/services/entry.service";
 import { AccountCategoriesComponent } from "../account-categories/account-categories.component";
 import { AccountCategoryDialogComponent } from "../account-category-dialog/account-category-dialog.component";
 import { AccountDialogComponent } from "../account-dialog/account-dialog.component";
@@ -37,49 +37,69 @@ import { EntryDialogComponent } from "../entry-dialog/entry-dialog.component";
   styleUrl: "./dashboard.component.css"
 })
 export class DashboardComponent implements OnInit {
-  activeAccounts: FormattedAccount[] = [];
-  categories: AccountCategory[] = [];
+  mostRecentGroupedEntry: GroupedEntry | undefined;
+  accounts: Account[] = [];
+  accountCategories: AccountCategory[] = [];
   assetsTotal = 0;
   liabilitiesTotal = 0;
   netWorth = 0;
 
   constructor(
     private dialog: MatDialog,
-    private accountCategoryService: AccountCategoryService,
-    private formattedDataService: FormattedDataService
+    private entryService: EntryService,
+    private accountService: AccountService,
+    private accountCategoryService: AccountCategoryService
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.activeAccounts =
-      await this.formattedDataService.getFormattedAccounts(true);
-    this.categories = await this.accountCategoryService.getAll();
+    this.entryService.entries$.subscribe(async (entries) => {
+      this.mostRecentGroupedEntry =
+        await this.entryService.getMostRecentGroupedEntry();
 
-    // Calculate financial totals when data is loaded
-    this.calculateFinancialTotals();
+      // Calculate financial totals when data is loaded
+      this.calculateFinancialTotals();
+    });
+
+    this.accountService.accounts$.subscribe((accounts) => {
+      this.accounts = accounts;
+    });
+
+    this.accountCategoryService.accountCategories$.subscribe((categories) => {
+      this.accountCategories = categories;
+    });
   }
 
-  calculateFinancialTotals(): void {
-    // Calculate assets total
-    this.assetsTotal = this.activeAccounts
-      .filter((account) => {
-        const category = this.categories.find(
-          (cat) => cat.id === account.category!.id
-        );
-        return category?.type === "Asset";
-      })
-      .reduce((total, account) => total + account.balance, 0);
+  calculateFinancialTotals() {
+    // Reset totals
+    this.assetsTotal = 0;
+    this.liabilitiesTotal = 0;
 
-    // Calculate liabilities total
-    this.liabilitiesTotal = this.activeAccounts
-      .filter((account) => {
-        const category = this.categories.find(
-          (cat) => cat.id === account.category!.id
-        );
-        return category?.type === "Liability";
-      })
-      .reduce((total, account) => total + account.balance, 0);
+    this.accounts.reduce((acc, account) => {
+      const category = this.accountCategories.find(
+        (cat) => cat.id === account.categoryId
+      );
 
-    // Calculate net worth
+      if (category) {
+        // If category is an asset type, add to assets
+        if (category.type === "Asset") {
+          this.assetsTotal +=
+            this.mostRecentGroupedEntry?.entries.find(
+              (entry) => entry.accountId === account.id
+            )?.balance || 0;
+        }
+        // If category is a liability type, add to liabilities
+        else if (category.type === "Liability") {
+          this.liabilitiesTotal +=
+            this.mostRecentGroupedEntry?.entries.find(
+              (entry) => entry.accountId === account.id
+            )?.balance || 0;
+        }
+      }
+
+      return acc;
+    }, {});
+
+    // Calculate net worth (assets minus liabilities)
     this.netWorth = this.assetsTotal - this.liabilitiesTotal;
   }
 

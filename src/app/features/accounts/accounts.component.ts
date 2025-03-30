@@ -4,12 +4,10 @@ import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { Subscription } from "rxjs";
 import { AccountCategory } from "../../core/models/account-category.model";
+import { Account } from "../../core/models/account.model";
 import { AccountCategoryService } from "../../core/services/account-category.service";
 import { AccountService } from "../../core/services/account.service";
-import {
-  FormattedAccount,
-  FormattedDataService
-} from "../../core/services/formatted-data.service";
+import { EntryService } from "../../core/services/entry.service";
 import { AccountDialogComponent } from "../account-dialog/account-dialog.component";
 import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
 
@@ -21,27 +19,40 @@ import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component"
   styleUrl: "./accounts.component.css"
 })
 export class AccountsComponent implements OnInit, OnDestroy {
-  activeAccounts: FormattedAccount[] = [];
+  accountsSubscription!: Subscription;
+  accountCategoriesSubscription!: Subscription;
+
+  activeAccounts: Account[] = [];
   categories: AccountCategory[] = [];
-  private eventSubscription: Subscription = new Subscription();
 
   constructor(
+    private entryService: EntryService,
     private accountService: AccountService,
-    private formattedDataService: FormattedDataService,
     private accountCategoryService: AccountCategoryService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   async ngOnInit() {
-    this.activeAccounts =
-      await this.formattedDataService.getFormattedAccounts(true);
-    this.categories = await this.accountCategoryService.getAll();
+    this.accountsSubscription = this.accountService.accounts$.subscribe(
+      (accounts) => {
+        this.activeAccounts = accounts.filter((account) => account.isActive);
+      }
+    );
+
+    this.accountCategoriesSubscription =
+      this.accountCategoryService.accountCategories$.subscribe((categories) => {
+        this.categories = categories;
+      });
   }
 
   ngOnDestroy() {
-    if (this.eventSubscription) {
-      this.eventSubscription.unsubscribe();
+    if (this.accountsSubscription) {
+      this.accountsSubscription.unsubscribe();
+    }
+
+    if (this.accountCategoriesSubscription) {
+      this.accountCategoriesSubscription.unsubscribe();
     }
   }
 
@@ -50,7 +61,7 @@ export class AccountsComponent implements OnInit, OnDestroy {
       (category) =>
         category.type === "Asset" &&
         this.activeAccounts.some(
-          (account) => account.category!.id === category.id
+          (account) => account.categoryId === category.id
         )
     );
   }
@@ -60,20 +71,18 @@ export class AccountsComponent implements OnInit, OnDestroy {
       (category) =>
         category.type === "Liability" &&
         this.activeAccounts.some(
-          (account) => account.category!.id === category.id
+          (account) => account.categoryId === category.id
         )
     );
   }
 
-  getAccountsByCategory(categoryId: number): FormattedAccount[] {
+  getAccountsByCategory(categoryId: number): Account[] {
     return this.activeAccounts.filter(
-      (account) => account.category!.id === categoryId
+      (account) => account.categoryId === categoryId
     );
   }
 
-  async openUpdateDialog(formattedAccount: FormattedAccount): Promise<void> {
-    const account = await this.accountService.get(formattedAccount.id);
-
+  async openUpdateDialog(account: Account): Promise<void> {
     const dialogRef = this.dialog.open(AccountDialogComponent, {
       data: { account: account }
     });
@@ -85,31 +94,32 @@ export class AccountsComponent implements OnInit, OnDestroy {
     });
   }
 
-  openDeleteDialog(account: FormattedAccount): void {
+  async getAccountBalance(accountId: number): Promise<number> {
+    return (
+      (await this.entryService.getMostRecentByAccountId(accountId))?.balance ??
+      0
+    );
+  }
+
+  openDeleteDialog(account: Account): void {
     // Open dialog to delete account
     const dialogRef = this.dialog.open(DeleteDialogComponent);
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.deleteAccount(account);
+        this.deactivateAccount(account);
       }
     });
-  }
-
-  async refreshAccounts(): Promise<void> {
-    this.activeAccounts =
-      await this.formattedDataService.getFormattedAccounts(true);
   }
 
   async refreshCategories(): Promise<void> {
     this.categories = await this.accountCategoryService.getAll();
   }
 
-  async deleteAccount(account: FormattedAccount): Promise<void> {
+  async deactivateAccount(account: Account) {
     try {
-      await this.formattedDataService.deleteFormattedAccount(account);
+      await this.accountService.deactivate(account.id!);
       this.snackBar.open("Account deleted", "Dismiss", { duration: 5000 });
-      this.refreshAccounts();
     } catch (error) {
       console.error("Error deleting account:", error);
       this.snackBar.open("Error deleting account", "Dismiss", {

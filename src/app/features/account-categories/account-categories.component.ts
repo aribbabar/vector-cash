@@ -1,14 +1,14 @@
 import { CommonModule } from "@angular/common";
-import { Component, inject, OnInit } from "@angular/core";
+import { Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MatCardModule } from "@angular/material/card";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { MatIconModule } from "@angular/material/icon";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTooltipModule } from "@angular/material/tooltip";
+import { Subscription } from "rxjs";
 import { AccountCategory } from "../../core/models/account-category.model";
 import { AccountCategoryService } from "../../core/services/account-category.service";
-import { AccountService } from "../../core/services/account.service";
 import { AccountCategoryDialogComponent } from "../account-category-dialog/account-category-dialog.component";
 import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
 
@@ -26,23 +26,30 @@ import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component"
   templateUrl: "./account-categories.component.html",
   styleUrl: "./account-categories.component.css"
 })
-export class AccountCategoriesComponent implements OnInit {
+export class AccountCategoriesComponent implements OnInit, OnDestroy {
+  accountCategoriesSubscription!: Subscription;
   activeAccountCategories: AccountCategory[] = [];
 
   snackBar: MatSnackBar = inject(MatSnackBar);
 
   constructor(
-    private accountService: AccountService,
     private accountCategoryService: AccountCategoryService,
     private dialog: MatDialog
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.accountCategoryService.accountCategories$.subscribe((categories) => {
-      this.activeAccountCategories = categories.filter(
-        (category) => category.isActive === true
-      );
-    });
+    this.accountCategoriesSubscription =
+      this.accountCategoryService.accountCategories$.subscribe((categories) => {
+        this.activeAccountCategories = categories.filter(
+          (category) => category.isActive === true
+        );
+      });
+  }
+
+  ngOnDestroy(): void {
+    if (this.accountCategoriesSubscription) {
+      this.accountCategoriesSubscription.unsubscribe();
+    }
   }
 
   openAddCategoryDialog(): void {

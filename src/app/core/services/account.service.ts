@@ -42,6 +42,22 @@ export class AccountService {
   async add(account: Account): Promise<number> {
     this.validateAccount(account);
 
+    // Check if a deactivated account with the same name already exists
+    const existingAccount = await this.databaseService.accounts
+      .where("name")
+      .equalsIgnoreCase(account.name)
+      .first();
+
+    if (existingAccount && !existingAccount.isActive) {
+      // Reactivate the existing account
+      await this.databaseService.accounts.update(existingAccount.id!, {
+        isActive: true,
+        ...account
+      });
+      await this.loadAccounts();
+      return existingAccount.id!;
+    }
+
     const id = await this.databaseService.accounts.add(account);
     await this.loadAccounts();
 

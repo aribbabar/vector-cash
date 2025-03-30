@@ -21,7 +21,7 @@ export class DatabaseService extends Dexie {
       entries: "++id, date, accountId, balance"
     });
 
-    // this.seedDatabase();
+    this.seedDatabase();
   }
 
   async seedDatabase() {
