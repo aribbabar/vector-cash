@@ -1,56 +1,24 @@
-<div class="chart-container">
-  <h2>Financial Overview</h2>
+<h2>Financial Overview</h2>
 
-  <div class="chart-controls">
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === '1w' }"
-      (click)="filterData('1w')"
-    >
-      1 Week
-    </button>
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === '1m' }"
-      (click)="filterData('1m')"
-    >
-      1 Month
-    </button>
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === '6m' }"
-      (click)="filterData('6m')"
-    >
-      6 Months
-    </button>
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === 'ytd' }"
-      (click)="filterData('ytd')"
-    >
-      YTD
-    </button>
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === '1y' }"
-      (click)="filterData('1y')"
-    >
-      1 Year
-    </button>
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === '5y' }"
-      (click)="filterData('5y')"
-    >
-      5 Years
-    </button>
-    <button
-      mat-button
-      [ngClass]="{ active: selectedTimeFrame === 'all' }"
-      (click)="filterData('all')"
-    >
-      All
-    </button>
+<div class="chart-container">
+  <div class="chart-header">
+    <div class="time-frame-selector">
+      <button
+        mat-button
+        *ngFor="let timeFrame of timeFrames"
+        [ngClass]="{ active: selectedTimeFrame === timeFrame }"
+        (click)="filterByTimeFrame(timeFrame)"
+      >
+        {{ timeFrame | uppercase }}
+      </button>
+      <button
+        mat-button
+        [ngClass]="{ active: selectedTimeFrame === 'all' }"
+        (click)="filterByTimeFrame('all')"
+      >
+        All
+      </button>
+    </div>
   </div>
 
   <div class="chart-legend">
@@ -68,36 +36,30 @@
     </div>
   </div>
 
-  @if (filteredData.length === 0) {
-    <div class="no-data-container">
-      <div class="no-data-message">
-        <mat-icon>info</mat-icon>
-        <h3>No data available</h3>
-        @if (financialData.length === 0) {
-          <p>
-            It looks like you haven't recorded any financial entries yet.
-            <br />Start by adding accounts and their balances.
-          </p>
-        }
-
-        @if (financialData.length > 0) {
-          <p>
-            No data available for the selected time period.
-            <br />Try selecting a different time frame.
-          </p>
-        }
+  <div class="chart-content">
+    <div *ngIf="filteredData.length === 0" class="no-data">
+      <p>
+        No financial data available for the selected time period. Try a
+        different time range.
+      </p>
+    </div>
+    <!-- Add ngIf with else to ensure proper DOM updates -->
+    <div *ngIf="filteredData.length > 0" class="chart-scroll-container">
+      <div id="chart"></div>
+      <div id="tooltip" class="tooltip">
+        <div class="tooltip-date">
+          <span class="date"></span>
+        </div>
+        <div class="tooltip-assets">
+          Assets: <span class="assets-value"></span>
+        </div>
+        <div class="tooltip-liabilities">
+          Liabilities: <span class="liabilities-value"></span>
+        </div>
+        <div class="tooltip-net-worth">
+          Net Worth: <span class="net-worth-value"></span>
+        </div>
       </div>
     </div>
-  }
-
-  <div class="chart-scroll-wrapper">
-    <div #chartContainer class="chart"></div>
-  </div>
-
-  <div class="tooltip" #tooltip style="display: none">
-    <div class="tooltip-date"></div>
-    <div class="tooltip-value assets">Assets: <span></span></div>
-    <div class="tooltip-value liabilities">Liabilities: <span></span></div>
-    <div class="tooltip-value net-worth">Net Worth: <span></span></div>
   </div>
 </div>

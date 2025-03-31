@@ -78,11 +78,7 @@ CSS Variables
       color: (
         theme-type: light,
         primary: light-theme.$primary-palette,
-        // secondary: light-theme.$secondary-palette,
-        tertiary: light-theme.$tertiary-palette,
-        // neutral: light-theme.$neutral-palette,
-        // neutral-variant: light-theme.$neutral-variant-palette,
-         // error: light-theme.$error-palette
+        tertiary: light-theme.$tertiary-palette
       ),
       typography: Roboto,
       density: 0
@@ -96,11 +92,7 @@ CSS Variables
       color: (
         theme-type: dark,
         primary: dark-theme.$primary-palette,
-        // secondary: dark-theme.$secondary-palette,
-        tertiary: dark-theme.$tertiary-palette,
-        // neutral: dark-theme.$neutral-palette,
-        // neutral-variant: dark-theme.$neutral-variant-palette,
-         // error: dark-theme.$error-palette
+        tertiary: dark-theme.$tertiary-palette
       ),
       typography: Roboto,
       density: 0

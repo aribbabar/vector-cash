@@ -1,8 +1,9 @@
 import { CommonModule } from "@angular/common";
-import { Component, ElementRef, HostListener, ViewChild } from "@angular/core";
+import { Component, HostListener, OnDestroy, OnInit } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import * as d3 from "d3";
+import { Subscription } from "rxjs";
 import { AccountCategory } from "../../core/models/account-category.model";
 import { Account } from "../../core/models/account.model";
 import { GroupedEntry } from "../../core/models/entry.model";
@@ -19,32 +20,29 @@ interface FinancialData {
 
 @Component({
   selector: "app-chart",
+  standalone: true,
   imports: [CommonModule, MatButtonModule, MatIconModule],
   templateUrl: "./chart.component.html",
-  styleUrls: ["./chart.component.scss"]
+  styleUrls: ["./chart.component.scss"],
+  // Add custom color properties for chart elements
+  host: {
+    style: `
+      --color-assets: #4CAF50;
+      --color-liabilities: #F44336;
+      --color-net-worth: #2196F3;
+    `
+  }
 })
-export class ChartComponent {
-  @ViewChild("chartContainer") private chartContainer!: ElementRef;
-  @ViewChild("tooltip") private tooltip!: ElementRef;
-
+export class ChartComponent implements OnInit, OnDestroy {
+  timeFrames = ["1w", "1m", "6m", "ytd", "1y", "5y"];
   groupedEntries: GroupedEntry[] = [];
   accounts: Account[] = [];
   accountCategories: AccountCategory[] = [];
   financialData: FinancialData[] = [];
   filteredData: FinancialData[] = [];
   selectedTimeFrame = "all";
-
-  private svg: any;
-  private margin = { top: 20, right: 30, bottom: 50, left: 100 };
-  private width = 960;
-  private height = 500;
-
-  // Cached groups for better update performance
-  private xAxisGroup: any;
-  private yAxisGroup: any;
-  private gridGroup: any;
-  private linesGroup: any;
-  private focusGroup: any;
+  private subscriptions = new Subscription();
+  readonly minChartWidth = 600;
 
   constructor(
     private entryService: EntryService,
@@ -52,397 +50,477 @@ export class ChartComponent {
     private accountCategoryService: AccountCategoryService
   ) {}
 
-  async ngAfterViewInit() {
-    this.accounts = await this.accountService.getAll();
-    this.accountCategories = await this.accountCategoryService.getAll();
-
-    this.entryService.entries$.subscribe(async (entries) => {
-      this.groupedEntries = await this.entryService.getAllGrouped();
-      this.financialData = await this.getFinancialData();
-      this.filteredData = [...this.financialData];
-      this.updateChart();
-      this.createChart();
-    });
-
-    window.addEventListener("resize", this.onRezize.bind(this));
+  ngOnInit() {
+    this.loadData();
   }
 
   ngOnDestroy() {
-    window.removeEventListener("resize", this.onRezize.bind(this));
+    this.subscriptions.unsubscribe();
+    // Clean up D3 elements to prevent memory leaks
+    d3.select("#chart").selectAll("*").remove();
   }
 
   @HostListener("window:resize")
-  onRezize() {
-    this.createChart();
+  onResize() {
+    // Redraw chart on window resize
+    this.drawChart();
   }
 
-  async getFinancialData(): Promise<FinancialData[]> {
-    const financialData: FinancialData[] = [];
+  async loadData() {
+    try {
+      this.accounts = await this.accountService.getAll();
+      this.accountCategories = await this.accountCategoryService.getAll();
 
-    // Precompute maps for accounts and categories for fast lookup
-    const accountMap = new Map(this.accounts.map((a) => [a.id, a]));
-    const categoryMap = new Map(this.accountCategories.map((c) => [c.id, c]));
+      const entriesSub = this.entryService.entries$.subscribe(async () => {
+        this.groupedEntries = await this.entryService.getAllGrouped();
+        this.processFinancialData();
+        this.filterByTimeFrame(this.selectedTimeFrame);
+      });
 
-    for (const groupedEntry of this.groupedEntries) {
+      // Add this line to load data on initial component load
+      this.groupedEntries = await this.entryService.getAllGrouped();
+      this.processFinancialData();
+      this.filterByTimeFrame(this.selectedTimeFrame);
+
+      this.subscriptions.add(entriesSub);
+    } catch (error) {
+      console.error("Error loading financial data:", error);
+    }
+  }
+
+  processFinancialData() {
+    this.financialData = [];
+
+    if (!this.groupedEntries.length || !this.accounts.length) {
+      return;
+    }
+
+    // Convert grouped entries to financial data points
+    this.groupedEntries.forEach((group) => {
+      const dateObj = this.parseDate(group.date);
+
       let assetsTotal = 0;
       let liabilitiesTotal = 0;
 
-      for (const entry of groupedEntry.entries) {
-        const account = accountMap.get(entry.accountId);
-        if (!account) continue;
-        const category = categoryMap.get(account.categoryId);
-        if (!category) continue;
+      group.entries.forEach((entry) => {
+        const account = this.accounts.find((a) => a.id === entry.accountId);
+        if (!account) return;
+
+        const category = this.accountCategories.find(
+          (c) => c.id === account.categoryId
+        );
+        if (!category) return;
 
         if (category.type === "Asset") {
           assetsTotal += entry.balance;
         } else if (category.type === "Liability") {
           liabilitiesTotal += entry.balance;
         }
-      }
+      });
 
-      financialData.push({
-        date: new Date(groupedEntry.date),
+      const netWorth = assetsTotal - liabilitiesTotal;
+
+      this.financialData.push({
+        date: dateObj,
         assetsTotal,
         liabilitiesTotal,
-        netWorth: assetsTotal - liabilitiesTotal
+        netWorth
       });
-    }
+    });
 
-    // Sort data by date (ascending)
-    return financialData.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Sort by date ascending
+    this.financialData.sort((a, b) => a.date.getTime() - b.date.getTime());
   }
 
-  filterData(timeFrame: string): void {
+  parseDate(dateStr: string): Date {
+    // Parse MM/DD/YYYY format
+    const [month, day, year] = dateStr.split("/").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  filterByTimeFrame(timeFrame: string) {
     this.selectedTimeFrame = timeFrame;
 
+    if (!this.financialData.length) {
+      this.filteredData = [];
+      return;
+    }
+
+    if (timeFrame === "all") {
+      this.filteredData = [...this.financialData];
+      // Ensure we call drawChart even if previousFilteredData was empty
+      this.drawChart();
+      return;
+    }
+
     const now = new Date();
-    let startDate: Date;
+    let cutoffDate = new Date();
 
     switch (timeFrame) {
       case "1w":
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
+        cutoffDate.setDate(now.getDate() - 7);
         break;
       case "1m":
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 1);
+        cutoffDate.setMonth(now.getMonth() - 1);
         break;
       case "6m":
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 6);
+        cutoffDate.setMonth(now.getMonth() - 6);
         break;
       case "ytd":
-        startDate = new Date(now.getFullYear(), 0, 1);
+        cutoffDate = new Date(now.getFullYear(), 0, 1);
         break;
       case "1y":
-        startDate = new Date(now);
-        startDate.setFullYear(now.getFullYear() - 1);
+        cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
       case "5y":
-        startDate = new Date(now);
-        startDate.setFullYear(now.getFullYear() - 5);
+        cutoffDate.setFullYear(now.getFullYear() - 5);
         break;
-      case "all":
       default:
         this.filteredData = [...this.financialData];
-        this.updateChart();
+        this.drawChart();
         return;
     }
 
+    // Store the previous length to detect transitions from no data to data
+    const previousLength = this.filteredData.length;
+
     this.filteredData = this.financialData.filter(
-      (item) => item.date >= startDate && item.date <= now
+      (data) => data.date >= cutoffDate && data.date <= now
     );
 
-    this.updateChart();
+    // Always redraw if we have data now, even if we didn't before
+    if (this.filteredData.length > 0) {
+      this.drawChart();
+    }
   }
 
-  createChart(): void {
-    if (!this.chartContainer || this.filteredData.length === 0) return;
+  drawChart() {
+    if (this.filteredData.length === 0) return;
 
-    const containerWidth = this.chartContainer.nativeElement.offsetWidth;
-    this.width = containerWidth - this.margin.left - this.margin.right;
+    // Ensure the chart container is visible and ready
+    const chartContainer = document.getElementById("chart");
+    if (!chartContainer) {
+      // If container isn't in DOM yet, try again shortly
+      setTimeout(() => this.drawChart(), 50);
+      return;
+    }
 
-    // Clear any existing SVG
-    d3.select(this.chartContainer.nativeElement).selectAll("*").remove();
+    // Clear previous chart
+    d3.select("#chart").selectAll("*").remove();
 
-    // Create the SVG container
-    this.svg = d3
-      .select(this.chartContainer.nativeElement)
+    // Dimensions - adjust for minimum width
+    const containerWidth =
+      document.getElementById("chart")?.clientWidth || window.innerWidth - 40;
+    const margin = { top: 20, right: 30, bottom: 50, left: 80 };
+
+    // Set chart width based on container, but ensure minimum width
+    const width = Math.max(this.minChartWidth, containerWidth);
+    const height = 500;
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    // Create SVG with responsive width
+    const svg = d3
+      .select("#chart")
       .append("svg")
-      .attr("width", this.width + this.margin.left + this.margin.right)
-      .attr("height", this.height + this.margin.top + this.margin.bottom)
-      .append("g")
-      .attr("transform", `translate(${this.margin.left},${this.margin.top})`);
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("preserveAspectRatio", "xMinYMid");
 
-    // Create groups for axes, grid, lines, and focus elements
-    this.xAxisGroup = this.svg
+    // Create container group
+    const g = svg
       .append("g")
-      .attr("class", "axis x-axis")
-      .attr("transform", `translate(0,${this.height})`);
-    this.yAxisGroup = this.svg.append("g").attr("class", "axis y-axis");
-    this.gridGroup = this.svg.append("g").attr("class", "grid");
-    this.linesGroup = this.svg.append("g").attr("class", "lines");
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-    // Create and cache the focus group (for tooltip elements)
-    this.focusGroup = this.svg
-      .append("g")
-      .attr("class", "focus")
-      .style("display", "none");
-    this.focusGroup
-      .append("circle")
-      .attr("class", "assets-circle")
-      .attr("r", 5)
-      .attr("fill", "var(--mat-sys-tertiary)");
-    this.focusGroup
-      .append("circle")
-      .attr("class", "liabilities-circle")
-      .attr("r", 5)
-      .attr("fill", "var(--mat-sys-error)");
-    this.focusGroup
-      .append("circle")
-      .attr("class", "networth-circle")
-      .attr("r", 5)
-      .attr("fill", "var(--mat-sys-primary)");
-    this.focusGroup
+    // Create scales
+    const xScale = d3
+      .scaleTime()
+      .domain(d3.extent(this.filteredData, (d) => d.date) as [Date, Date])
+      .range([0, innerWidth]);
+
+    // Find max value across all three data series for y-scale
+    const yMax =
+      d3.max(this.filteredData, (d) =>
+        Math.max(d.assetsTotal, d.liabilitiesTotal, d.netWorth)
+      ) || 0;
+
+    // Find min value (particularly for net worth which might be negative)
+    const yMin = d3.min(this.filteredData, (d) => Math.min(0, d.netWorth)) || 0;
+
+    // Increase the padding on the y-axis range for better visualization
+    const yScale = d3
+      .scaleLinear()
+      .domain([yMin * 1.2, yMax * 1.2]) // Increase padding to 20% on both ends
+      .range([innerHeight, 0])
+      .nice();
+
+    // Create line generators
+    const assetsLine = d3
+      .line<FinancialData>()
+      .x((d) => xScale(d.date))
+      .y((d) => yScale(d.assetsTotal))
+      .curve(d3.curveMonotoneX);
+
+    const liabilitiesLine = d3
+      .line<FinancialData>()
+      .x((d) => xScale(d.date))
+      .y((d) => yScale(d.liabilitiesTotal))
+      .curve(d3.curveMonotoneX);
+
+    const netWorthLine = d3
+      .line<FinancialData>()
+      .x((d) => xScale(d.date))
+      .y((d) => yScale(d.netWorth))
+      .curve(d3.curveMonotoneX);
+
+    // Add axes
+    const xAxis = d3.axisBottom(xScale);
+    g.append("g")
+      .attr("class", "xAxis")
+      .attr("transform", `translate(0, ${innerHeight})`)
+      .call(xAxis);
+
+    const yAxis = d3
+      .axisLeft(yScale)
+      .tickFormat((d) => `$${d3.format(",.0f")(d)}`);
+
+    g.append("g").attr("class", "yAxis").call(yAxis);
+
+    // Add grid lines
+    g.append("g")
+      .attr("class", "grid")
+      .selectAll("line")
+      .data(yScale.ticks())
+      .enter()
       .append("line")
-      .attr("class", "focus-line")
-      .attr("y1", 0)
-      .attr("y2", this.height)
-      .attr("stroke", "#888")
-      .attr("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("x2", innerWidth)
+      .attr("y1", (d) => yScale(d))
+      .attr("y2", (d) => yScale(d))
+      .attr("stroke", "#e0e0e0")
       .attr("stroke-dasharray", "3,3");
 
-    // Create transparent overlay once
-    this.svg
-      .append("rect")
-      .attr("class", "overlay")
-      .attr("width", this.width)
-      .attr("height", this.height)
-      .style("opacity", 0)
-      .on("mouseover", () => {
-        this.focusGroup.style("display", null);
-        d3.select(this.tooltip.nativeElement).style("display", null);
-      })
-      .on("mouseout", () => {
-        this.focusGroup.style("display", "none");
-        d3.select(this.tooltip.nativeElement).style("display", "none");
-      })
-      .on("mousemove", (event: MouseEvent) => this.handleMousemove(event));
+    // Get theme colors from CSS variables
+    const assetColor =
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--color-assets"
+      ) || "#4CAF50";
+    const liabilityColor =
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--color-liabilities"
+      ) || "#F44336";
+    const netWorthColor =
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--color-net-worth"
+      ) || "#2196F3";
 
-    // Initial chart render
-    this.updateChart();
-  }
+    // Add lines with theme colors
+    g.append("path")
+      .datum(this.filteredData)
+      .attr("class", "line assets-line")
+      .attr("d", assetsLine)
+      .attr("fill", "none")
+      .attr("stroke", assetColor)
+      .attr("stroke-width", 2);
 
-  private handleMousemove(event: MouseEvent): void {
-    // X scale (recompute to ensure it matches the current filteredData)
-    const x = d3
-      .scaleTime()
-      .domain(d3.extent(this.filteredData, (d) => d.date) as [Date, Date])
-      .range([0, this.width]);
+    g.append("path")
+      .datum(this.filteredData)
+      .attr("class", "line liabilities-line")
+      .attr("d", liabilitiesLine)
+      .attr("fill", "none")
+      .attr("stroke", liabilityColor)
+      .attr("stroke-width", 2);
 
-    // Y scale
-    const maxValue = d3.max([
-      d3.max(this.filteredData, (d) => d.assetsTotal) ?? 0,
-      d3.max(this.filteredData, (d) => d.liabilitiesTotal) ?? 0,
-      d3.max(this.filteredData, (d) => d.netWorth) ?? 0
-    ]) as number;
-    const minValue = d3.min([
-      d3.min(this.filteredData, (d) => d.netWorth) ?? 0,
-      0
-    ]) as number;
-    const y = d3
-      .scaleLinear()
-      .domain([minValue < 0 ? minValue * 1.1 : 0, maxValue * 1.1])
-      .range([this.height, 0]);
+    g.append("path")
+      .datum(this.filteredData)
+      .attr("class", "line net-worth-line")
+      .attr("d", netWorthLine)
+      .attr("fill", "none")
+      .attr("stroke", netWorthColor)
+      .attr("stroke-width", 2.5);
 
-    const currencyFormatter = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    });
-    const dateFormatter = d3.timeFormat("%b %d, %Y");
+    // Add data points for assets
+    g.selectAll(".asset-point")
+      .data(this.filteredData)
+      .enter()
+      .append("circle")
+      .attr("class", "asset-point")
+      .attr("cx", (d) => xScale(d.date))
+      .attr("cy", (d) => yScale(d.assetsTotal))
+      .attr("r", 3)
+      .attr("fill", assetColor)
+      .attr("stroke", "var(--mat-sys-surface)")
+      .attr("stroke-width", 1);
+
+    // Add data points for liabilities
+    g.selectAll(".liability-point")
+      .data(this.filteredData)
+      .enter()
+      .append("circle")
+      .attr("class", "liability-point")
+      .attr("cx", (d) => xScale(d.date))
+      .attr("cy", (d) => yScale(d.liabilitiesTotal))
+      .attr("r", 3)
+      .attr("fill", liabilityColor)
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1);
+
+    // Add data points for net worth
+    g.selectAll(".net-worth-point")
+      .data(this.filteredData)
+      .enter()
+      .append("circle")
+      .attr("class", "net-worth-point")
+      .attr("cx", (d) => xScale(d.date))
+      .attr("cy", (d) => yScale(d.netWorth))
+      .attr("r", 3)
+      .attr("fill", netWorthColor)
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1);
+
+    // Add tooltip functionality
+    const tooltip = d3.select("#tooltip");
+    const tooltipLine = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("y1", 0)
+      .attr("y2", innerHeight)
+      .attr("stroke", "#666")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "3,3")
+      .style("opacity", 0);
+
+    const assetsPoint = g
+      .append("circle")
+      .attr("r", 5)
+      .attr("fill", "#4CAF50")
+      .style("opacity", 0);
+
+    const liabilitiesPoint = g
+      .append("circle")
+      .attr("r", 5)
+      .attr("fill", "#F44336")
+      .style("opacity", 0);
+
+    const netWorthPoint = g
+      .append("circle")
+      .attr("r", 5)
+      .attr("fill", "#2196F3")
+      .style("opacity", 0);
+
+    // Create overlay for mouse events
     const bisect = d3.bisector<FinancialData, Date>((d) => d.date).left;
 
-    const mouseX = d3.pointer(event)[0];
-    const x0 = x.invert(mouseX);
-    const i = bisect(this.filteredData, x0, 1);
-    if (i >= this.filteredData.length) return;
-    const d0 = this.filteredData[i - 1];
-    const d1 = this.filteredData[i];
-    const d =
-      x0.getTime() - d0.date.getTime() > d1.date.getTime() - x0.getTime()
-        ? d1
-        : d0;
-
-    // Update focus elements positions
-    this.focusGroup
-      .select(".assets-circle")
-      .attr("cx", x(d.date))
-      .attr("cy", y(d.assetsTotal));
-    this.focusGroup
-      .select(".liabilities-circle")
-      .attr("cx", x(d.date))
-      .attr("cy", y(d.liabilitiesTotal));
-    this.focusGroup
-      .select(".networth-circle")
-      .attr("cx", x(d.date))
-      .attr("cy", y(d.netWorth));
-    this.focusGroup
-      .select(".focus-line")
-      .attr("x1", x(d.date))
-      .attr("x2", x(d.date));
-
-    // Update tooltip content
-    const tooltipEl = d3.select(this.tooltip.nativeElement);
-    tooltipEl.select(".tooltip-date").text(dateFormatter(d.date));
-    tooltipEl
-      .select(".tooltip-value.assets span")
-      .text(currencyFormatter.format(d.assetsTotal));
-    tooltipEl
-      .select(".tooltip-value.liabilities span")
-      .text(currencyFormatter.format(d.liabilitiesTotal));
-    tooltipEl
-      .select(".tooltip-value.net-worth span")
-      .text(currencyFormatter.format(d.netWorth));
-
-    // Position tooltip to follow the mouse cursor
-    const tooltipWidth = this.tooltip.nativeElement.offsetWidth;
-    const tooltipHeight = this.tooltip.nativeElement.offsetHeight;
-    const mouseLeft = event.clientX;
-    const mouseTop = event.clientY;
-    let tooltipLeft = mouseLeft + 20;
-    let tooltipTop = mouseTop - tooltipHeight / 2;
-
-    if (tooltipLeft + tooltipWidth > window.innerWidth)
-      tooltipLeft = mouseLeft - tooltipWidth - 10;
-    if (tooltipTop + tooltipHeight > window.innerHeight)
-      tooltipTop = window.innerHeight - tooltipHeight - 10;
-    if (tooltipTop < 0) tooltipTop = 10;
-
-    tooltipEl.style("left", `${tooltipLeft}px`).style("top", `${tooltipTop}px`);
-  }
-
-  updateChart(): void {
-    if (!this.svg || this.filteredData.length === 0) return;
-
-    // Recompute scales
-    const x = d3
-      .scaleTime()
-      .domain(d3.extent(this.filteredData, (d) => d.date) as [Date, Date])
-      .range([0, this.width]);
-    const maxValue = d3.max([
-      d3.max(this.filteredData, (d) => d.assetsTotal) ?? 0,
-      d3.max(this.filteredData, (d) => d.liabilitiesTotal) ?? 0,
-      d3.max(this.filteredData, (d) => d.netWorth) ?? 0
-    ]) as number;
-    const minValue = d3.min([
-      d3.min(this.filteredData, (d) => d.netWorth) ?? 0,
-      0
-    ]) as number;
-    const y = d3
-      .scaleLinear()
-      .domain([minValue < 0 ? minValue * 1.1 : 0, maxValue * 1.1])
-      .range([this.height, 0]);
-
-    // Update axes
-    this.xAxisGroup.call(
-      d3
-        .axisBottom(x)
-        .ticks(5)
-        .tickFormat((domainValue: any) =>
-          d3.timeFormat("%b %Y")(
-            domainValue instanceof Date ? domainValue : new Date(+domainValue)
-          )
-        )
-    );
-    this.yAxisGroup.call(
-      d3.axisLeft(y).tickFormat((d: any) =>
-        new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(d)
-      )
-    );
-
-    // Update grid lines
-    this.gridGroup.call(
-      d3
-        .axisLeft(y)
-        .tickSize(-this.width)
-        .tickFormat(() => "")
-    );
-
-    // Line generator function
-    const createLine = (accessor: (d: FinancialData) => number) => {
-      return d3
-        .line<FinancialData>()
-        .x((d) => x(d.date))
-        .y((d) => y(accessor(d)))
-        .curve(d3.curveMonotoneX);
-    };
-
-    // Use join to update paths in the linesGroup
-    const linesData = [
-      {
-        key: "assets",
-        accessor: (d: FinancialData) => d.assetsTotal,
-        stroke: "var(--mat-sys-tertiary)",
-        strokeWidth: 2
-      },
-      {
-        key: "liabilities",
-        accessor: (d: FinancialData) => d.liabilitiesTotal,
-        stroke: "var(--mat-sys-error)",
-        strokeWidth: 2
-      },
-      {
-        key: "networth",
-        accessor: (d: FinancialData) => d.netWorth,
-        stroke: "var(--mat-sys-primary)",
-        strokeWidth: 3
-      }
-    ];
-
-    const paths = this.linesGroup
-      .selectAll("path")
-      .data(linesData, (d: any) => d.key);
-
-    paths.exit().remove();
-
-    paths
-      .enter()
-      .append("path")
-      .merge(paths)
+    g.append("rect")
+      .attr("width", innerWidth)
+      .attr("height", innerHeight)
       .attr("fill", "none")
-      .attr("stroke", (d: any) => d.stroke)
-      .attr("stroke-width", (d: any) => d.strokeWidth)
-      .attr("d", (d: any) => createLine(d.accessor)(this.filteredData)!);
+      .attr("pointer-events", "all")
+      .on("mousemove", (event: any) => {
+        const mouseX = d3.pointer(event)[0];
+        const x0 = xScale.invert(mouseX);
+        const i = bisect(this.filteredData, x0, 1);
+        const d0 = i > 0 ? this.filteredData[i - 1] : null;
+        const d1 = i < this.filteredData.length ? this.filteredData[i] : null;
+        const d =
+          d0 && d1
+            ? x0.getTime() - d0.date.getTime() >
+              d1.date.getTime() - x0.getTime()
+              ? d1
+              : d0
+            : d0 || d1;
 
-    // Update X axis label (recreate or reposition as needed)
-    this.svg.selectAll(".axis-label.x").remove(); // remove previous
-    this.svg
-      .append("text")
-      .attr("class", "axis-label x")
-      .attr("x", this.width / 2)
-      .attr("y", this.height + this.margin.top + 20)
-      .style("text-anchor", "middle")
-      .style("fill", "var(--mat-sys-on-surface-variant)")
-      .text("Date");
+        if (!d) return;
 
-    // Update Y axis label
-    this.svg.selectAll(".axis-label.y").remove();
-    this.svg
+        const xPos = xScale(d.date);
+
+        // Update line and points
+        tooltipLine.attr("x1", xPos).attr("x2", xPos).style("opacity", 1);
+
+        assetsPoint
+          .attr("cx", xPos)
+          .attr("cy", yScale(d.assetsTotal))
+          .style("opacity", 1);
+
+        liabilitiesPoint
+          .attr("cx", xPos)
+          .attr("cy", yScale(d.liabilitiesTotal))
+          .style("opacity", 1);
+
+        netWorthPoint
+          .attr("cx", xPos)
+          .attr("cy", yScale(d.netWorth))
+          .style("opacity", 1);
+
+        // Format date for tooltip
+        const formatDate = d3.timeFormat("%b %d, %Y");
+
+        // Position and show tooltip - update this section in your mousemove event handler
+        // Calculate positions considering the container boundaries
+        const tooltipNode = tooltip.node() as HTMLElement;
+        const tooltipWidth = tooltipNode.offsetWidth;
+        const tooltipHeight = tooltipNode.offsetHeight;
+
+        // Determine best position for tooltip (above or below, left or right)
+        let xPosition = xPos + margin.left;
+        let yPosition = margin.top;
+
+        // Ensure tooltip doesn't go off the right edge
+        if (xPosition + tooltipWidth > containerWidth) {
+          xPosition = xPosition - tooltipWidth;
+        }
+
+        // Position tooltip below the point if near the top
+        if (yPosition < tooltipHeight) {
+          yPosition = yPosition + tooltipHeight;
+        }
+
+        // Apply positioning
+        tooltip
+          .style("display", "block")
+          .style("left", `${xPosition}px`)
+          .style("top", `${yPosition}px`);
+
+        tooltip.select(".date").text(formatDate(d.date));
+        tooltip
+          .select(".assets-value")
+          .text(`$${d3.format(",.2f")(d.assetsTotal)}`);
+        tooltip
+          .select(".liabilities-value")
+          .text(`$${d3.format(",.2f")(d.liabilitiesTotal)}`);
+        tooltip
+          .select(".net-worth-value")
+          .text(`$${d3.format(",.2f")(d.netWorth)}`);
+      })
+      .on("mouseleave", function () {
+        tooltipLine.style("opacity", 0);
+        assetsPoint.style("opacity", 0);
+        liabilitiesPoint.style("opacity", 0);
+        netWorthPoint.style("opacity", 0);
+        tooltip.style("display", "none");
+      });
+
+    // Add labels
+    svg
       .append("text")
-      .attr("class", "axis-label y")
+      .attr("class", "y-axis-label")
       .attr("transform", "rotate(-90)")
-      .attr("y", 10 - this.margin.left)
-      .attr("x", -this.height / 2)
-      .attr("dy", "1em")
-      .style("text-anchor", "middle")
-      .style("fill", "var(--mat-sys-on-surface-variant)")
-      .text("Balance ($)");
+      .attr("y", 20)
+      .attr("x", -height / 2)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "12px")
+      .attr("fill", "#666")
+      .text("Amount ($)");
+
+    svg
+      .append("text")
+      .attr("class", "x-axis-label")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height - 10)
+      .attr("font-size", "12px")
+      .attr("fill", "#666")
+      .text("Date");
   }
 }
