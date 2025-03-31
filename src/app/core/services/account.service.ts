@@ -86,6 +86,18 @@ export class AccountService {
       throw new Error(`Account with ID ${accountId} not found.`);
     }
 
+    // If setting isActive to true, check if the category exists and is active
+    if (account.isActive) {
+      const category = await this.databaseService.accountCategories.get(
+        existingAccount.categoryId!
+      );
+      if (!category || !category.isActive) {
+        throw new Error(
+          `Cannot activate account. Category: ${existingAccount.name} is not active.`
+        );
+      }
+    }
+
     const updatedAccount: Account = {
       ...existingAccount,
       ...account

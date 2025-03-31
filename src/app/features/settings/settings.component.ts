@@ -73,19 +73,19 @@ export class SettingsComponent {
 
     this.accountService.accounts$.subscribe((accounts) => {
       this.accounts = accounts;
+
+      this.inactiveAccounts = this.accounts.filter(
+        (account) => !account.isActive
+      );
     });
 
     this.accountCategoryService.accountCategories$.subscribe((categories) => {
       this.accountCategories = categories;
+
+      this.inactiveAccountCategories = this.accountCategories.filter(
+        (category) => !category.isActive
+      );
     });
-
-    this.inactiveAccounts = this.accounts.filter(
-      (account) => !account.isActive
-    );
-
-    this.inactiveAccountCategories = this.accountCategories.filter(
-      (category) => !category.isActive
-    );
   }
 
   async restoreAccount(accountId: number) {
@@ -97,9 +97,9 @@ export class SettingsComponent {
       this.snackBar.open("Account restored successfully", "Close", {
         duration: 3000
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error restoring account:", error);
-      this.snackBar.open((error as Error).message, "Close", {
+      this.snackBar.open(error.message || "Error restoring account", "Close", {
         duration: 3000
       });
     }
@@ -114,11 +114,15 @@ export class SettingsComponent {
       this.snackBar.open("Category restored successfully", "Close", {
         duration: 3000
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error restoring category:", error);
-      this.snackBar.open((error as Error).message, "Close", {
-        duration: 3000
-      });
+      this.snackBar.open(
+        error.message || "Error restoring account category",
+        "Close",
+        {
+          duration: 3000
+        }
+      );
     }
   }
 
@@ -219,12 +223,10 @@ export class SettingsComponent {
     });
   }
 
-  deleteDatabase(): void {
-    this.databaseService.deleteDatabase();
+  async deleteDatabase() {
+    await this.databaseService.deleteDatabase();
 
-    this.snackBar.open("All data has been deleted", "Close", {
-      duration: 3000
-    });
+    window.location.reload();
   }
 
   changeTheme(theme: string): void {

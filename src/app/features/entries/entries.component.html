@@ -73,5 +73,9 @@
     </div>
   </div>
 } @else {
-  <p>No entries found.</p>
+  <app-model-not-found
+    text="No entries found. Create your first entry!"
+    buttonText="Add Entry"
+    [dialogComponent]="entryDialogComponent"
+  ></app-model-not-found>
 }

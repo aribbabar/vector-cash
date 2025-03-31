@@ -1,0 +1,237 @@
+// SCSS Variables
+$border-radius: 5px;
+$spacing-sm: 5px;
+$spacing-md: 10px;
+$spacing-lg: 20px;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+}
+
+@mixin box-shadow {
+  box-shadow: var(--mat-sys-level1);
+}
+
+.chart-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: Roboto, sans-serif;
+
+  h2 {
+    text-align: center;
+    margin-bottom: $spacing-lg;
+    padding-bottom: $spacing-md;
+    border-bottom: 2px solid var(--mat-sys-outline);
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.chart {
+  min-width: 800px;
+  width: 100%;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: $border-radius;
+  background-color: var(--mat-sys-surface-container-low);
+  @include box-shadow;
+}
+
+.chart-controls {
+  @include flex-center;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-md;
+
+  button {
+    padding: 8px 16px;
+    background-color: var(--mat-sys-surface-container);
+    border: 1px solid var(--mat-sys-outline);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    color: var(--mat-sys-on-surface);
+
+    &:hover {
+      background-color: var(--mat-sys-surface-container-high);
+    }
+
+    &.active {
+      background-color: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+      border-color: var(--mat-sys-primary);
+    }
+  }
+}
+
+.chart-legend {
+  @include flex-center;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-lg;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.legend-color {
+  display: inline-block;
+  width: 14px;
+  height: 4px;
+  margin-right: $spacing-sm;
+
+  &.assets {
+    background-color: var(--mat-sys-tertiary);
+    height: 10px;
+  }
+
+  &.liabilities {
+    background-color: var(--mat-sys-error);
+    height: 10px;
+  }
+
+  &.net-worth {
+    background-color: var(--mat-sys-primary);
+    height: 10px;
+  }
+}
+
+.axis {
+  line,
+  path {
+    stroke: var(--mat-sys-outline) !important;
+  }
+
+  text {
+    fill: var(--mat-sys-on-surface-variant) !important;
+    font-size: 12px;
+  }
+}
+
+.grid {
+  line {
+    stroke: var(--mat-sys-outline) !important;
+    stroke-opacity: 0.7;
+  }
+
+  path {
+    stroke-width: 0;
+  }
+}
+
+.assets-line {
+  stroke: var(--mat-sys-tertiary) !important;
+}
+
+.liabilities-line {
+  stroke: var(--mat-sys-error) !important;
+}
+
+.net-worth-line {
+  stroke: var(--mat-sys-primary) !important;
+}
+
+.axis-label {
+  fill: var(--mat-sys-on-surface-variant) !important;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tooltip {
+  position: fixed;
+  padding: $spacing-md;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--mat-sys-on-primary-fixed);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  pointer-events: none;
+  font-size: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+
+  &-date {
+    font-weight: bold;
+    margin-bottom: $spacing-sm;
+    border-bottom: 1px solid #eee;
+    padding-bottom: $spacing-sm;
+  }
+
+  &-value {
+    margin: 3px 0;
+
+    &.assets span {
+      color: #006e1c;
+      font-weight: bold;
+    }
+
+    &.liabilities span {
+      color: #ba1a20;
+      font-weight: bold;
+    }
+
+    &.net-worth span {
+      color: #005faf;
+      font-weight: bold;
+    }
+  }
+}
+
+.no-data-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: $border-radius;
+  background-color: var(--mat-sys-surface-container-low);
+  @include box-shadow;
+  margin-bottom: $spacing-lg;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: $spacing-lg;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    margin-bottom: $spacing-md;
+    color: var(--mat-sys-outline);
+  }
+
+  h3 {
+    margin-bottom: $spacing-md;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface);
+  }
+
+  p {
+    line-height: 1.5;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+  }
+
+  .chart-controls {
+    flex-direction: column;
+    align-items: center;
+
+    button {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+}

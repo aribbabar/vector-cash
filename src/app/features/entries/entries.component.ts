@@ -17,6 +17,7 @@ import { AccountService } from "../../core/services/account.service";
 import { EntryService } from "../../core/services/entry.service";
 import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
 import { EntryDialogComponent } from "../entry-dialog/entry-dialog.component";
+import { ModelNotFoundComponent } from "../model-not-found/model-not-found.component";
 
 @Component({
   selector: "app-entries",
@@ -31,12 +32,14 @@ import { EntryDialogComponent } from "../entry-dialog/entry-dialog.component";
     MatTooltipModule,
     DatePipe,
     CurrencyPipe,
-    CommonModule
+    CommonModule,
+    ModelNotFoundComponent
   ],
   templateUrl: "./entries.component.html",
   styleUrl: "./entries.component.css"
 })
 export class EntriesComponent implements OnInit {
+  entryDialogComponent = EntryDialogComponent;
   displayedColumns: string[] = ["date"];
   dataSource: MatTableDataSource<GroupedEntry> =
     new MatTableDataSource<GroupedEntry>([]);
@@ -194,7 +197,15 @@ export class EntriesComponent implements OnInit {
   }
 
   openDeleteDialog(entry: GroupedEntry): void {
-    const dialogRef = this.dialog.open(DeleteDialogComponent);
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      data: {
+        title: "Delete Entry",
+        message: `Are you sure you want to delete the entry for ${entry.date}?`,
+        confirmText: "Delete",
+        cancelText: "Cancel"
+      }
+    });
+
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.removeEntries(entry);

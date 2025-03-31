@@ -1,42 +1,51 @@
-<h2 mat-dialog-title>{{ isUpdate ? "Update Account" : "Create Account" }}</h2>
+<h2 mat-dialog-title>{{ isEditMode ? "Update Account" : "Create Account" }}</h2>
 
 <div mat-dialog-content>
-  <form [formGroup]="accountForm" (ngSubmit)="onSubmit()">
-    <div class="form-container">
-      <!-- Account Name -->
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Account Name</mat-label>
-        <input
-          matInput
-          formControlName="name"
-          placeholder="e.g. Chase Checking"
-        />
-        @if (accountForm.get("name")?.invalid) {
-          <mat-error> Account name is required </mat-error>
-        }
-      </mat-form-field>
-
-      <!-- Account Category -->
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Account Category</mat-label>
-        <mat-select formControlName="categoryId">
-          @for (category of activeAccountCategories; track category) {
-            <mat-option [value]="category.id">
-              {{ category.name }}
-            </mat-option>
-          }
-        </mat-select>
-        <mat-error *ngIf="accountForm.get('categoryId')?.invalid">
-          Account category is required
-        </mat-error>
-      </mat-form-field>
+  @if (activeAccountCategories.length === 0) {
+    <div class="no-categories-message">
+      <p>No account categories available.</p>
+      <p>Please create at least one category before creating an account.</p>
     </div>
-  </form>
+  } @else {
+    <form [formGroup]="accountForm" (ngSubmit)="onSubmit()">
+      <div class="form-container">
+        <!-- Account Name -->
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Account Name</mat-label>
+          <input
+            matInput
+            formControlName="name"
+            placeholder="e.g. Chase Checking"
+          />
+          @if (accountForm.get("name")?.invalid) {
+            <mat-error> Account name is required </mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Account Category -->
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Account Category</mat-label>
+          <mat-select formControlName="categoryId">
+            @for (category of activeAccountCategories; track category) {
+              <mat-option [value]="category.id">
+                {{ category.name }}
+              </mat-option>
+            }
+          </mat-select>
+          <mat-error *ngIf="accountForm.get('categoryId')?.invalid">
+            Account category is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </form>
+  }
 </div>
 
 <div mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="onSubmit()">
-    {{ isUpdate ? "Update" : "Create" }}
-  </button>
+  @if (activeAccountCategories.length > 0) {
+    <button mat-raised-button color="primary" (click)="onSubmit()">
+      {{ isEditMode ? "Update" : "Create" }}
+    </button>
+  }
 </div>

@@ -10,15 +10,17 @@ import { AccountService } from "../../core/services/account.service";
 import { EntryService } from "../../core/services/entry.service";
 import { AccountDialogComponent } from "../account-dialog/account-dialog.component";
 import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
+import { ModelNotFoundComponent } from "../model-not-found/model-not-found.component";
 
 @Component({
   selector: "app-accounts",
   standalone: true,
-  imports: [CommonModule, CurrencyPipe],
+  imports: [CommonModule, CurrencyPipe, ModelNotFoundComponent],
   templateUrl: "./accounts.component.html",
   styleUrl: "./accounts.component.css"
 })
 export class AccountsComponent implements OnInit {
+  accountDialogComponent = AccountDialogComponent;
   entries: Entry[] = [];
   activeAccounts: Account[] = [];
   activeAccountsEntriesMap: Map<Account, Entry> = new Map();
@@ -94,7 +96,7 @@ export class AccountsComponent implements OnInit {
 
   async openUpdateDialog(account: Account): Promise<void> {
     const dialogRef = this.dialog.open(AccountDialogComponent, {
-      data: { account: account }
+      data: account
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -106,7 +108,14 @@ export class AccountsComponent implements OnInit {
 
   openDeleteDialog(account: Account): void {
     // Open dialog to delete account
-    const dialogRef = this.dialog.open(DeleteDialogComponent);
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      data: {
+        title: "Delete Account",
+        message: `Are you sure you want to delete the account "${account.name}"?`,
+        confirmButtonText: "Delete",
+        cancelButtonText: "Cancel"
+      }
+    });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {

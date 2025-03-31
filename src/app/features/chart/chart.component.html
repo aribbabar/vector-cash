@@ -68,7 +68,32 @@
     </div>
   </div>
 
-  <div #chartContainer class="chart"></div>
+  @if (filteredData.length === 0) {
+    <div class="no-data-container">
+      <div class="no-data-message">
+        <mat-icon>info</mat-icon>
+        <h3>No data available</h3>
+        @if (financialData.length === 0) {
+          <p>
+            It looks like you haven't recorded any financial entries yet.
+            <br />Start by adding accounts and their balances.
+          </p>
+        }
+
+        @if (financialData.length > 0) {
+          <p>
+            No data available for the selected time period.
+            <br />Try selecting a different time frame.
+          </p>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="chart-scroll-wrapper">
+    <div #chartContainer class="chart"></div>
+  </div>
+
   <div class="tooltip" #tooltip style="display: none">
     <div class="tooltip-date"></div>
     <div class="tooltip-value assets">Assets: <span></span></div>

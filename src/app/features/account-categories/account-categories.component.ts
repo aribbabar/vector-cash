@@ -11,6 +11,7 @@ import { AccountCategory } from "../../core/models/account-category.model";
 import { AccountCategoryService } from "../../core/services/account-category.service";
 import { AccountCategoryDialogComponent } from "../account-category-dialog/account-category-dialog.component";
 import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
+import { ModelNotFoundComponent } from "../model-not-found/model-not-found.component";
 
 @Component({
   selector: "app-account-categories",
@@ -21,12 +22,14 @@ import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component"
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
-    MatTooltipModule
+    MatTooltipModule,
+    ModelNotFoundComponent
   ],
   templateUrl: "./account-categories.component.html",
   styleUrl: "./account-categories.component.css"
 })
 export class AccountCategoriesComponent implements OnInit, OnDestroy {
+  accountCategoryDialogComponent = AccountCategoryDialogComponent;
   accountCategoriesSubscription!: Subscription;
   activeAccountCategories: AccountCategory[] = [];
 
@@ -90,24 +93,28 @@ export class AccountCategoriesComponent implements OnInit, OnDestroy {
 
       dialogRef.afterClosed().subscribe(async (confirmed) => {
         if (confirmed) {
-          this.snackBar.open(
-            `Category "${category.name}" has been deleted.`,
-            "Dismiss",
-            {
-              duration: 5000
-            }
-          );
+          try {
+            await this.accountCategoryService.deactivate(category.id!);
+
+            this.snackBar.open(
+              `Category "${category.name}" has been deleted.`,
+              "Dismiss",
+              {
+                duration: 5000
+              }
+            );
+          } catch (error: any) {
+            console.error("Error deleting category:", error);
+            this.snackBar.open(
+              error.message || "Error deleting category",
+              "Close",
+              {
+                duration: 5000
+              }
+            );
+          }
         }
       });
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      this.snackBar.open(
-        "An error occurred while trying to delete the category.",
-        "Close",
-        {
-          duration: 5000
-        }
-      );
-    }
+    } catch (error) {}
   }
 }

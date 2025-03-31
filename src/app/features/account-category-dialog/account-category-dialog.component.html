@@ -1,4 +1,6 @@
-<h2 mat-dialog-title>{{ dialogTitle }}</h2>
+<h2 mat-dialog-title>
+  {{ isEditMode ? "Update Account Category" : "Create Account Category" }}
+</h2>
 
 <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
   <div mat-dialog-content>
@@ -47,11 +49,7 @@
       type="submit"
       [disabled]="categoryForm.invalid"
     >
-      @if (isEditMode) {
-        Update
-      } @else {
-        Create
-      }
+      {{ isEditMode ? "Update" : "Create" }}
     </button>
   </div>
 </form>

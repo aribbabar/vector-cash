@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
-import { Component, ElementRef, ViewChild } from "@angular/core";
+import { Component, ElementRef, HostListener, ViewChild } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
+import { MatIconModule } from "@angular/material/icon";
 import * as d3 from "d3";
 import { AccountCategory } from "../../core/models/account-category.model";
 import { Account } from "../../core/models/account.model";
@@ -18,9 +19,9 @@ interface FinancialData {
 
 @Component({
   selector: "app-chart",
-  imports: [CommonModule, MatButtonModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule],
   templateUrl: "./chart.component.html",
-  styleUrls: ["./chart.component.css"]
+  styleUrls: ["./chart.component.scss"]
 })
 export class ChartComponent {
   @ViewChild("chartContainer") private chartContainer!: ElementRef;
@@ -51,14 +52,27 @@ export class ChartComponent {
     private accountCategoryService: AccountCategoryService
   ) {}
 
-  async ngOnInit() {
-    this.groupedEntries = await this.entryService.getAllGrouped();
+  async ngAfterViewInit() {
     this.accounts = await this.accountService.getAll();
     this.accountCategories = await this.accountCategoryService.getAll();
 
-    this.financialData = await this.getFinancialData();
-    this.filteredData = [...this.financialData];
+    this.entryService.entries$.subscribe(async (entries) => {
+      this.groupedEntries = await this.entryService.getAllGrouped();
+      this.financialData = await this.getFinancialData();
+      this.filteredData = [...this.financialData];
+      this.updateChart();
+      this.createChart();
+    });
 
+    window.addEventListener("resize", this.onRezize.bind(this));
+  }
+
+  ngOnDestroy() {
+    window.removeEventListener("resize", this.onRezize.bind(this));
+  }
+
+  @HostListener("window:resize")
+  onRezize() {
     this.createChart();
   }
 

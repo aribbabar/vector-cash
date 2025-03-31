@@ -1,4 +1,5 @@
 import { TestBed } from "@angular/core/testing";
+import { AccountCategory } from "../models/account-category.model";
 import { Account } from "../models/account.model";
 import { AccountCategoryService } from "./account-category.service";
 import { AccountService } from "./account.service";
@@ -218,6 +219,58 @@ describe("AccountService", () => {
 
       try {
         await accountService.update(999, updatedAccount);
+      } catch (error: any) {
+        // Expect an error
+        expect(error).toBeTruthy();
+      }
+    });
+
+    it("should throw an error when attempting to update an account with a non-existent categoryId", async () => {
+      const account = {
+        name: "Chase Checking",
+        categoryId: 1 // Assuming this ID exists in the database
+      };
+
+      const id = await accountService.add(account);
+
+      const updatedAccount = {
+        ...account,
+        name: "Updated Chase Checking",
+        categoryId: 999 // Assuming this ID does not exist in the database
+      };
+
+      try {
+        await accountService.update(id, updatedAccount);
+      } catch (error: any) {
+        // Expect an error
+        expect(error).toBeTruthy();
+      }
+    });
+
+    it("should throw an error when attempting to set the isActive property of an account to true for an inactive category", async () => {
+      const accountCategory: AccountCategory = {
+        name: "Inactive Category",
+        type: "Asset",
+        isActive: false
+      };
+
+      const categoryId = await accountCategoryService.add(accountCategory);
+
+      const account = {
+        name: "Chase Checking",
+        categoryId: categoryId // Assuming this ID exists in the database
+      };
+
+      const id = await accountService.add(account);
+
+      const updatedAccount = {
+        ...account,
+        name: "Updated Chase Checking",
+        isActive: true
+      };
+
+      try {
+        await accountService.update(id, updatedAccount);
       } catch (error: any) {
         // Expect an error
         expect(error).toBeTruthy();

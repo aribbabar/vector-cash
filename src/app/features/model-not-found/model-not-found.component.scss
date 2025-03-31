@@ -1,0 +1,22 @@
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: var(--mat-sys-surface-container-low);
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: var(--mat-sys-level1);
+
+  p {
+    margin-bottom: 24px;
+    font-size: 1.2rem;
+    color: var(--mat-sys-on-surface-variant, #666);
+  }
+
+  button {
+    padding: 8px 24px;
+    font-weight: 500;
+  }
+}

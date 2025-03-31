@@ -1,0 +1,90 @@
+// SCSS Variables
+$spacing-standard: 16px;
+$spacing-small: 8px;
+$spacing-medium: 15px;
+$border-radius: 8px;
+$min-form-width: 350px;
+$max-form-width: 500px;
+
+.no-categories-message {
+  text-align: center;
+  padding: $spacing-standard;
+  color: var(--mat-sys-on-surface-variant);
+  background-color: var(--mat-sys-surface-container);
+  border-radius: $border-radius;
+  margin: $spacing-standard 0;
+
+  p {
+    margin: $spacing-small 0;
+
+    &:first-child {
+      font-weight: 500;
+    }
+  }
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  min-width: $min-form-width;
+  max-width: $max-form-width;
+  border-radius: $border-radius;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.checkbox-field {
+  margin-bottom: $spacing-medium;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Nested selectors to improve organization
+mat-form-field {
+  margin-bottom: $spacing-standard;
+}
+
+mat-dialog {
+  &-content {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &-actions {
+    padding: $spacing-standard;
+    background-color: var(--mat-sys-surface-container-low);
+  }
+}
+
+button {
+  &[mat-button] {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &[mat-raised-button],
+  &[color="primary"] {
+    background-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+// Mobile responsiveness
+@media (max-width: 480px) {
+  .form-container {
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  mat-dialog-actions {
+    flex-direction: column-reverse;
+    gap: $spacing-small;
+
+    button {
+      width: 100%;
+    }
+  }
+}

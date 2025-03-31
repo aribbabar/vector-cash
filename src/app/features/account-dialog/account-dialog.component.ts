@@ -37,12 +37,12 @@ import { AccountService } from "../../core/services/account.service";
     MatSelectModule
   ],
   templateUrl: "./account-dialog.component.html",
-  styleUrl: "./account-dialog.component.css"
+  styleUrl: "./account-dialog.component.scss"
 })
 export class AccountDialogComponent implements OnInit {
-  accountForm: FormGroup;
+  accountForm!: FormGroup;
   activeAccountCategories: AccountCategory[] = [];
-  isUpdate = false;
+  isEditMode = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -50,8 +50,10 @@ export class AccountDialogComponent implements OnInit {
     private accountCategoryService: AccountCategoryService,
     private snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<AccountDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { account: Account }
-  ) {
+    @Inject(MAT_DIALOG_DATA) public data: Account | null
+  ) {}
+
+  async ngOnInit(): Promise<void> {
     this.accountForm = this.formBuilder.group({
       name: ["", [Validators.required]],
       categoryId: ["", [Validators.required]],
@@ -59,17 +61,15 @@ export class AccountDialogComponent implements OnInit {
     });
 
     // If we have data, we're updating an existing account
-    if (data && data.account) {
-      this.isUpdate = true;
+    if (this.data) {
+      this.isEditMode = true;
       this.accountForm.patchValue({
-        name: data.account.name,
-        categoryId: data.account.categoryId,
-        isActive: data.account.isActive
+        name: this.data.name,
+        categoryId: this.data.categoryId,
+        isActive: this.data.isActive
       });
     }
-  }
 
-  async ngOnInit(): Promise<void> {
     this.accountCategoryService.accountCategories$.subscribe((categories) => {
       this.activeAccountCategories = categories.filter(
         (category) => category.isActive
@@ -94,15 +94,13 @@ export class AccountDialogComponent implements OnInit {
         isActive: formValues.isActive
       };
 
-      if (this.isUpdate && this.data.account.id) {
+      if (this.isEditMode && this.data) {
         // Update existing account
-        const accountId = this.data.account.id;
+        const accountId = this.data.id!;
         await this.accountService.update(accountId, account);
-        this.snackBar.open("Account updated", "Dismiss", { duration: 5000 });
       } else {
         // Create new account
         await this.accountService.add(account);
-        this.snackBar.open("Account created", "Dismiss", { duration: 5000 });
       }
 
       this.dialogRef.close(true);

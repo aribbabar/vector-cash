@@ -15,6 +15,7 @@ import {
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { AccountCategory } from "../../core/models/account-category.model";
 import { AccountCategoryService } from "../../core/services/account-category.service";
 
@@ -31,31 +32,32 @@ import { AccountCategoryService } from "../../core/services/account-category.ser
     MatSelectModule
   ],
   templateUrl: "./account-category-dialog.component.html",
-  styleUrl: "./account-category-dialog.component.css"
+  styleUrl: "./account-category-dialog.component.scss"
 })
 export class AccountCategoryDialogComponent implements OnInit {
-  categoryForm: FormGroup;
+  categoryForm!: FormGroup;
   isEditMode = false;
-  dialogTitle = "Create Category";
 
   constructor(
     private accountCategoryService: AccountCategoryService,
     private fb: FormBuilder,
     public dialogRef: MatDialogRef<AccountCategoryDialogComponent>,
+    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: AccountCategory | null
-  ) {
+  ) {}
+
+  ngOnInit(): void {
+    this.dialogRef.updateSize("400px");
+
     this.categoryForm = this.fb.group({
       name: ["", [Validators.required]],
       type: ["", [Validators.required]],
       description: [""],
       isActive: [true]
     });
-  }
 
-  ngOnInit(): void {
     if (this.data) {
       this.isEditMode = true;
-      this.dialogTitle = "Edit Category";
       this.categoryForm.patchValue({
         name: this.data.name,
         type: this.data.type,
@@ -65,8 +67,12 @@ export class AccountCategoryDialogComponent implements OnInit {
     }
   }
 
-  onSubmit(): void {
-    if (this.categoryForm.valid) {
+  async onSubmit() {
+    if (this.categoryForm.invalid) {
+      return;
+    }
+
+    try {
       const category: AccountCategory = {
         ...this.categoryForm.value
       };
@@ -76,12 +82,18 @@ export class AccountCategoryDialogComponent implements OnInit {
       }
 
       if (this.isEditMode) {
-        this.accountCategoryService.update(category.id!, category);
+        await this.accountCategoryService.update(category.id!, category);
       } else {
-        this.accountCategoryService.add(category);
+        await this.accountCategoryService.add(category);
       }
 
       this.dialogRef.close(category);
+    } catch (error: any) {
+      console.error("Error saving category:", error.message);
+      this.snackBar.open("Error saving category. Please try again.", "Close", {
+        duration: 5000,
+        panelClass: ["error-snackbar"]
+      });
     }
   }
 
