@@ -126,7 +126,7 @@ h2 {
 }
 
 .tooltip {
-  position: absolute;
+  position: fixed; // Changed from absolute to fixed for better mouse following
   display: none;
   background: var(--mat-sys-surface);
   border: 1px solid var(--mat-sys-outline);
@@ -136,6 +136,8 @@ h2 {
   font-size: 0.875rem;
   box-shadow: var(--mat-sys-level2);
   z-index: 10;
+  transition: transform 0.1s ease; // Add smooth transition
+  max-width: 200px; // Ensure the tooltip doesn't get too wide
 
   .tooltip-date {
     font-weight: 500;

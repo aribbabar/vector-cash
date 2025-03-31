@@ -456,24 +456,40 @@ export class ChartComponent implements OnInit, OnDestroy {
         // Format date for tooltip
         const formatDate = d3.timeFormat("%b %d, %Y");
 
-        // Position and show tooltip - update this section in your mousemove event handler
-        // Calculate positions considering the container boundaries
+        // Get mouse position relative to chart container
+        const chartContainer = document.querySelector(
+          ".chart-content"
+        ) as HTMLElement;
+        const chartRect = chartContainer.getBoundingClientRect();
+        const mousePosition = d3.pointer(event);
+
+        // Calculate position relative to chart container
         const tooltipNode = tooltip.node() as HTMLElement;
         const tooltipWidth = tooltipNode.offsetWidth;
         const tooltipHeight = tooltipNode.offsetHeight;
 
-        // Determine best position for tooltip (above or below, left or right)
-        let xPosition = xPos + margin.left;
-        let yPosition = margin.top;
+        // Add offset from cursor to prevent tooltip from blocking view
+        const xOffset = 25;
+        const yOffset = 65;
 
-        // Ensure tooltip doesn't go off the right edge
-        if (xPosition + tooltipWidth > containerWidth) {
-          xPosition = xPosition - tooltipWidth;
+        // Calculate tooltip position based on mouse position
+        let xPosition = mouseX - margin.left - xOffset;
+        let yPosition = mousePosition[1] - margin.top - yOffset;
+
+        // Convert to page coordinates
+        xPosition += chartRect.left;
+        yPosition += chartRect.top;
+
+        // Ensure tooltip doesn't go off the screen edges
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        if (xPosition + tooltipWidth > windowWidth) {
+          xPosition = xPosition - tooltipWidth - xOffset * 2;
         }
 
-        // Position tooltip below the point if near the top
-        if (yPosition < tooltipHeight) {
-          yPosition = yPosition + tooltipHeight;
+        if (yPosition + tooltipHeight > windowHeight) {
+          yPosition = yPosition - tooltipHeight - yOffset * 2;
         }
 
         // Apply positioning
