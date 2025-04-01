@@ -1,59 +1,125 @@
 # VectorCash
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.3.
+**URL**: [vectorcash.net](https://vectorcash.net)
 
-## Development server
+VectorCash is a personal finance tracker that allows users to log, visualize, and manage their financial accounts. With an intuitive interface and real-time charting, users can monitor their assets, liabilities, and net worth effortlessly.
 
-To start a local development server, run:
+---
+
+## 🧩 Features
+
+- **Daily Balance Tracking**  
+  Log the daily balances of various accounts like checking, savings, credit cards, loans, and investments.
+
+- **Account Management**  
+  Add, edit, or remove financial accounts. Accounts are categorized and classified as assets or liabilities.
+
+- **Interactive Charts**  
+  View visual representations of financial trends including account growth, decay, and net worth using D3.js.
+
+- **Data Persistence**  
+  Offline support and local storage of entries using IndexedDB via Dexie.js.
+
+---
+
+## 🧱 Data Models
+
+### 📁 AccountCategory
+
+| Field         | Type    | Description                                |
+| ------------- | ------- | ------------------------------------------ |
+| `id`          | number  | Unique identifier                          |
+| `name`        | string  | Category name (e.g. "Checking", "Savings") |
+| `type`        | string  | `"Asset"` or `"Liability"`                 |
+| `description` | string  | (Optional) Description                     |
+| `isActive`    | boolean | Flag for active/deleted status             |
+
+### 🏦 Account
+
+| Field        | Type    | Description                          |
+| ------------ | ------- | ------------------------------------ |
+| `id`         | number  | Unique identifier                    |
+| `name`       | string  | Account name (e.g. "Chase Checking") |
+| `categoryId` | number  | Foreign key to `AccountCategory`     |
+| `isActive`   | boolean | Flag for active/deleted status       |
+
+### 📈 Entry
+
+| Field       | Type   | Description                   |
+| ----------- | ------ | ----------------------------- |
+| `id`        | number | Unique identifier             |
+| `date`      | string | Format: `MM/DD/YYYY`          |
+| `accountId` | number | Foreign key to `Account`      |
+| `balance`   | number | Daily balance for the account |
+
+---
+
+## 🌐 Pages
+
+- **Home Page**  
+  Landing page introducing VectorCash.
+
+- **Dashboard Page**  
+  Displays:
+  - Account balances
+  - Daily log entries
+  - Interactive line chart (via D3.js)
+  - Net worth calculations
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer              | Technology                                      |
+| ------------------ | ----------------------------------------------- |
+| Frontend Framework | [Angular](https://angular.io)                   |
+| UI Components      | [Angular Material](https://material.angular.io) |
+| Data Storage       | [Dexie.js](https://dexie.org) (IndexedDB)       |
+| Charting           | [D3.js](https://d3js.org)                       |
+
+---
+
+## 🚀 Getting Started
+
+1. Clone the repo:
+
+```bash
+git clone https://github.com/aribbabar/vector-cash
+cd vectorcash
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the development server:
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+4. Open your browser and navigate to:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## 🧪 Running Tests
 
 ```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
+# Run unit tests
 ng test
-```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
+# Run end-to-end tests
 ng e2e
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## 📦 Building for Production
 
-## Additional Resources
+```bash
+ng build --prod
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+The build artifacts will be stored in the `dist/` directory.
