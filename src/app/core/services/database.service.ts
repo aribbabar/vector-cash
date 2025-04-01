@@ -23,7 +23,9 @@ export class DatabaseService extends Dexie {
 
     // Check if the database has been seeded before
     if (window.localStorage.getItem("isSeeded") !== "true") {
-      this.seedDatabase2();
+      this.seedDatabase2().then(() => {
+        window.location.reload();
+      });
       window.localStorage.setItem("isSeeded", "true");
     }
 
