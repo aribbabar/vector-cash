@@ -79,16 +79,50 @@ export class ImportExportService {
         );
       }
 
+      // Check if the imported data is valid
       for (const entry of importedData.entries) {
-        this.entryService.add(entry);
+        if (
+          entry.id === undefined ||
+          entry.date === undefined ||
+          entry.accountId === undefined ||
+          entry.balance === undefined
+        ) {
+          console.log(!entry.id, !entry.date, !entry.accountId, !entry.balance);
+          throw new Error("Invalid entry data.");
+        }
       }
 
       for (const account of importedData.accounts) {
-        this.accountService.add(account);
+        if (
+          account.id === undefined ||
+          account.name === undefined ||
+          account.categoryId === undefined
+        ) {
+          console.log(account);
+          throw new Error("Invalid account data.");
+        }
       }
 
       for (const accountCategory of importedData.accountCategories) {
-        this.accountCategoryService.add(accountCategory);
+        if (
+          accountCategory.id === undefined ||
+          accountCategory.name === undefined ||
+          accountCategory.type === undefined
+        ) {
+          throw new Error("Invalid account category data.");
+        }
+      }
+
+      for (const entry of importedData.entries) {
+        await this.entryService.add(entry);
+      }
+
+      for (const account of importedData.accounts) {
+        await this.accountService.add(account);
+      }
+
+      for (const accountCategory of importedData.accountCategories) {
+        await this.accountCategoryService.add(accountCategory);
       }
     } catch (error) {
       console.error("Error parsing imported data:", error);
