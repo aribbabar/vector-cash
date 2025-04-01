@@ -68,14 +68,24 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   async loadData() {
     try {
-      this.accounts = await this.accountService.getAll();
-      this.accountCategories = await this.accountCategoryService.getAll();
-
       const entriesSub = this.entryService.entries$.subscribe(async () => {
         this.groupedEntries = await this.entryService.getAllGrouped();
         this.processFinancialData();
         this.filterByTimeFrame(this.selectedTimeFrame);
       });
+
+      const accountSub = this.accountService.accounts$.subscribe(async () => {
+        this.accounts = await this.accountService.getAll();
+        this.processFinancialData();
+        this.filterByTimeFrame(this.selectedTimeFrame);
+      });
+
+      const accountCategorySub =
+        this.accountCategoryService.accountCategories$.subscribe(async () => {
+          this.accountCategories = await this.accountCategoryService.getAll();
+          this.processFinancialData();
+          this.filterByTimeFrame(this.selectedTimeFrame);
+        });
 
       // Add this line to load data on initial component load
       this.groupedEntries = await this.entryService.getAllGrouped();
@@ -83,6 +93,8 @@ export class ChartComponent implements OnInit, OnDestroy {
       this.filterByTimeFrame(this.selectedTimeFrame);
 
       this.subscriptions.add(entriesSub);
+      this.subscriptions.add(accountSub);
+      this.subscriptions.add(accountCategorySub);
     } catch (error) {
       console.error("Error loading financial data:", error);
     }
