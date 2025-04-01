@@ -22,7 +22,9 @@
       @for (account of accounts; track account.id) {
         <ng-container [matColumnDef]="account.id!.toString()">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>
-            {{ account.name }}
+            {{ account.name }} ({{
+              getAccountCategoryName(account.categoryId!)
+            }})
           </th>
           <td mat-cell *matCellDef="let entry">
             @if (getAccountEntryAmount(entry, account.id!) !== null) {

@@ -167,6 +167,14 @@ export class EntriesComponent implements OnInit {
     return entry ? entry.balance : 0;
   }
 
+  getAccountCategoryName(categoryId: number): string {
+    const accountCategory = this.accountCategories.find(
+      (c) => c.id === categoryId
+    );
+
+    return accountCategory ? accountCategory.name : "";
+  }
+
   getAccountCategoryClass(accountId: number): string {
     const account = this.accounts.find((a) => a.id === accountId);
     if (!account) return "";
