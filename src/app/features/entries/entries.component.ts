@@ -164,7 +164,7 @@ export class EntriesComponent implements OnInit {
     accountId: number
   ): number | null {
     const entry = groupedEntry.entries.find((e) => e.accountId === accountId);
-    return entry ? entry.balance : null;
+    return entry ? entry.balance : 0;
   }
 
   getAccountCategoryClass(accountId: number): string {

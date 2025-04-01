@@ -160,7 +160,7 @@ export class EntryDialogComponent implements OnInit {
   createAccountFormGroup(
     account: Account,
     accountCategory: AccountCategory,
-    balance: number | undefined = 20
+    balance: number | undefined = undefined
   ): FormGroup {
     return this.formBuilder.group({
       id: [account.id],
