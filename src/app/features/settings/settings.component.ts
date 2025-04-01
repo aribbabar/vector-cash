@@ -40,7 +40,7 @@ interface ImportExportData {
     MatDialogModule
   ],
   templateUrl: "./settings.component.html",
-  styleUrl: "./settings.component.css"
+  styleUrl: "./settings.component.scss"
 })
 export class SettingsComponent {
   entries: Entry[] = [];
