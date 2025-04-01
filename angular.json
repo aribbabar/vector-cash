@@ -27,7 +27,7 @@
                 "glob": "**/*",
                 "input": "public"
               },
-              "src/_routes.json"
+              "src/_routes"
             ],
             "styles": ["src/styles.scss"],
             "scripts": []
