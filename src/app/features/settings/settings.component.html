@@ -1,20 +1,21 @@
 <div class="settings-container">
-  <h1>Settings</h1>
+  <h1 class="settings-title">Settings</h1>
 
-  <mat-card>
+  <mat-card class="settings-card">
     <mat-tab-group animationDuration="0ms">
       <!-- General Settings -->
       <mat-tab label="General">
-        <div class="tab-content">
-          <h2>Appearance</h2>
+        <div class="settings-section">
+          <h2 class="section-title">Appearance</h2>
 
-          <div class="setting-group">
-            <h3>Theme</h3>
+          <div class="settings-group">
+            <h3 class="group-title">Theme</h3>
             <div class="theme-options">
               @for (theme of themeOptions; track theme) {
                 <button
                   mat-raised-button
                   [class.active]="theme === currentTheme"
+                  class="theme-button"
                   (click)="changeTheme(theme)"
                 >
                   {{ theme | titlecase }}
@@ -27,23 +28,23 @@
 
       <!-- Account Settings -->
       <mat-tab label="Accounts">
-        <div class="tab-content">
-          <h2>Account Management</h2>
+        <div class="settings-section">
+          <h2 class="section-title">Account Management</h2>
 
-          <div class="setting-group">
-            <h3>Deleted Accounts</h3>
+          <div class="settings-group">
+            <h3 class="group-title">Deleted Accounts</h3>
 
             @if (inactiveAccounts.length > 0) {
-              <div class="deleted-accounts-list">
+              <div class="accounts-list">
                 @for (account of inactiveAccounts; track account.id!) {
-                  <mat-expansion-panel>
+                  <mat-expansion-panel class="account-panel">
                     <mat-expansion-panel-header>
                       <mat-panel-title>
                         {{ account.name }}
                       </mat-panel-title>
                     </mat-expansion-panel-header>
 
-                    <div class="account-actions">
+                    <div class="panel-actions">
                       <button
                         mat-raised-button
                         color="primary"
@@ -63,23 +64,23 @@
             }
           </div>
 
-          <div class="setting-group">
-            <h3>Deleted Categories</h3>
+          <div class="settings-group">
+            <h3 class="group-title">Deleted Categories</h3>
 
             @if (inactiveAccountCategories.length > 0) {
-              <div class="deleted-categories-list">
+              <div class="categories-list">
                 @for (
                   category of inactiveAccountCategories;
                   track category.id!
                 ) {
-                  <mat-expansion-panel>
+                  <mat-expansion-panel class="category-panel">
                     <mat-expansion-panel-header>
                       <mat-panel-title>
                         {{ category.name }}
                       </mat-panel-title>
                     </mat-expansion-panel-header>
 
-                    <div class="account-actions">
+                    <div class="panel-actions">
                       <button
                         mat-raised-button
                         color="primary"
@@ -103,44 +104,50 @@
 
       <!-- Database Settings -->
       <mat-tab label="Database">
-        <div class="tab-content">
-          <h2>Data Management</h2>
+        <div class="settings-section">
+          <h2 class="section-title">Data Management</h2>
 
-          <div class="setting-group">
-            <h3>Backup & Restore</h3>
+          <div class="settings-group">
+            <h3 class="group-title">Backup & Restore</h3>
 
-            <div class="action-buttons">
-              <button mat-raised-button color="primary" (click)="exportData()">
+            <div class="data-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                class="action-button"
+                (click)="exportData()"
+              >
                 <mat-icon>cloud_download</mat-icon>
                 Export Data
               </button>
 
-              <div class="file-upload">
-                <button
-                  mat-raised-button
-                  color="primary"
-                  (click)="triggerFileInput()"
-                >
-                  <mat-icon>cloud_upload</mat-icon>
-                  Import Data
-                </button>
-                <input
-                  #fileInput
-                  type="file"
-                  accept=".json"
-                  (change)="importData($event)"
-                />
-              </div>
+              <button
+                mat-raised-button
+                color="primary"
+                class="action-button"
+                (click)="triggerFileInput()"
+              >
+                <mat-icon>cloud_upload</mat-icon>
+                Import Data
+              </button>
+              <input
+                #fileInput
+                hidden
+                type="file"
+                accept=".json"
+                (change)="importData($event)"
+              />
             </div>
           </div>
 
-          <div class="setting-group danger-zone">
-            <h3>Danger Zone</h3>
+          <div class="settings-group danger-zone">
+            <h3 class="group-title danger-title">Danger Zone</h3>
 
-            <div class="action-buttons">
+            <div class="danger-actions">
               <button
                 mat-raised-button
                 color="warn"
+                class="danger-button"
                 (click)="confirmEntriesDeletion()"
               >
                 <mat-icon>delete_forever</mat-icon>
@@ -149,13 +156,14 @@
               <button
                 mat-raised-button
                 color="warn"
+                class="danger-button"
                 (click)="confirmDatabaseDeletion()"
               >
                 <mat-icon>delete_forever</mat-icon>
                 Delete All Data
               </button>
             </div>
-            <p class="warning-text">
+            <p class="danger-text">
               This will permanently delete all your financial data, accounts,
               transactions, and settings. This action cannot be undone.
             </p>

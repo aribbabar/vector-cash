@@ -1,139 +1,172 @@
-// SCSS Variables
-$spacing-sm: 12px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$spacing-xl: 32px;
-
-// Mixins
-@mixin flex-container($gap: $spacing-md, $direction: row) {
-  display: flex;
-  gap: $gap;
-  @if $direction != row {
-    flex-direction: $direction;
-  }
-}
-
-@mixin card-container {
-  background-color: var(--mat-sys-surface-container);
-  border-radius: 4px;
-  box-shadow: var(--mat-sys-level1);
-}
-
 .settings-container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-
-  h1 {
-    margin-bottom: $spacing-lg;
-    font-weight: 500;
-    color: var(--mat-sys-on-surface);
-  }
-
-  h2 {
-    margin-top: 0;
-    margin-bottom: $spacing-md;
-    font-weight: 500;
-    color: var(--mat-sys-on-surface);
-  }
-
-  h3 {
-    font-weight: 500;
-    margin-bottom: $spacing-sm;
-    color: var(--mat-sys-on-surface);
-  }
+  padding: 1.5rem;
 }
 
-.tab-content {
-  padding: $spacing-lg;
-  @include card-container;
+.settings-title {
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
 }
 
-.setting-group {
-  margin-bottom: $spacing-xl;
-  padding-bottom: $spacing-lg;
+.settings-card {
+  border-radius: 12px;
+  box-shadow: var(--mat-sys-level1);
+  background-color: var(--mat-sys-surface-container);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.settings-section {
+  padding: 1.5rem;
+}
+
+.section-title {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--mat-sys-outline);
+}
 
-  &.danger-zone {
-    background-color: var(--mat-sys-error-container);
-    padding: $spacing-md;
-    border-radius: 4px;
-    border: 1px solid var(--mat-sys-error);
+.settings-group {
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background-color: var(--mat-sys-surface-container-low);
+  border-radius: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
   }
 }
 
-/* Theme options */
+.group-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
+}
+
+// Theme options
 .theme-options {
-  @include flex-container($spacing-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
 
-  button {
-    min-width: 100px;
-    background-color: var(--mat-sys-surface-container-high);
-    color: var(--mat-sys-on-surface);
+.theme-button {
+  min-width: 120px;
 
-    &.active {
-      background-color: var(--mat-sys-primary);
-      color: var(--mat-sys-on-primary);
-    }
+  &.active {
+    background-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
   }
 }
 
-/* Account list */
-.deleted-accounts-list,
-.deleted-categories-list {
+// Account and Category lists
+.accounts-list,
+.categories-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
-.account-actions {
-  margin-top: $spacing-sm;
+.account-panel,
+.category-panel {
+  margin-bottom: 0.5rem;
+  background-color: var(--mat-sys-surface-container-high);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0;
 }
 
 .empty-state {
-  padding: $spacing-lg;
-  text-align: center;
-  color: var(--mat-sys-on-surface-variant);
-  background-color: var(--mat-sys-surface-container-lowest);
+  padding: 1rem;
   border-radius: 4px;
-}
+  background-color: var(--mat-sys-surface-container-high);
+  text-align: center;
 
-/* Database actions */
-.action-buttons {
-  @include flex-container;
-  margin-bottom: $spacing-md;
-  flex-wrap: wrap;
-}
-
-.file-upload {
-  position: relative;
-  display: inline-block;
-
-  input[type="file"] {
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    z-index: -1; /* Hide behind the button */
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
   }
 }
 
-.warning-text {
-  color: var(--mat-sys-error);
-  font-size: 14px;
-  margin-top: $spacing-sm;
+// Data management
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .action-buttons {
-    @include flex-container($spacing-sm, column);
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 150px;
+}
 
-    button {
-      width: 100%;
-    }
+.file-import {
+  position: relative;
+}
+
+// Danger zone
+.danger-zone {
+  border: 1px dashed var(--mat-sys-error);
+  background-color: var(--mat-sys-error-container);
+}
+
+.danger-title {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+.danger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.danger-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.danger-text {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-error-container);
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .settings-section {
+    padding: 1rem;
+  }
+
+  .data-actions,
+  .danger-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .action-button,
+  .danger-button {
+    width: 100%;
   }
 }
