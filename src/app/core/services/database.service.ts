@@ -21,36 +21,48 @@ export class DatabaseService extends Dexie {
       entries: "++id, date, accountId, balance"
     });
 
-    this.seedDatabase();
+    // Check if the database has been seeded before
+    if (window.localStorage.getItem("isSeeded") !== "true") {
+      this.seedDatabase2();
+      window.localStorage.setItem("isSeeded", "true");
+    }
+
+    // this.seedDatabase1();
+    // this.seedDatabase2();
   }
 
-  async seedDatabase() {
+  async seedDatabase1() {
     if ((await this.accountCategories.count()) === 0) {
-      await this.seedAccountCategories();
+      const categories = SeedDataGenerator.generateAccountCategories1();
+      await this.accountCategories.bulkAdd(categories);
     }
 
     if ((await this.accounts.count()) === 0) {
-      await this.seedAccounts();
+      const accounts = SeedDataGenerator.generateAccounts1();
+      await this.accounts.bulkAdd(accounts);
     }
 
     if ((await this.entries.count()) === 0) {
-      await this.seedEntries();
+      const entries = SeedDataGenerator.generateEntries1();
+      await this.entries.bulkAdd(entries);
     }
   }
 
-  private async seedAccountCategories() {
-    const categories = SeedDataGenerator.generateAccountCategories();
-    await this.accountCategories.bulkAdd(categories);
-  }
+  async seedDatabase2() {
+    if ((await this.accountCategories.count()) === 0) {
+      const categories = SeedDataGenerator.generateAccountCategories2();
+      await this.accountCategories.bulkAdd(categories);
+    }
 
-  private async seedAccounts() {
-    const accounts = SeedDataGenerator.generateAccounts();
-    await this.accounts.bulkAdd(accounts);
-  }
+    if ((await this.accounts.count()) === 0) {
+      const accounts = SeedDataGenerator.generateAccounts2();
+      await this.accounts.bulkAdd(accounts);
+    }
 
-  private async seedEntries() {
-    const entries = SeedDataGenerator.generateEntries();
-    await this.entries.bulkAdd(entries);
+    if ((await this.entries.count()) === 0) {
+      const entries = SeedDataGenerator.generateEntries2();
+      await this.entries.bulkAdd(entries);
+    }
   }
 
   async deleteDatabase() {

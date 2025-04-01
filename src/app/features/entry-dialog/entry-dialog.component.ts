@@ -189,13 +189,34 @@ export class EntryDialogComponent implements OnInit {
       );
       const accounts = this.entryForm.value.accounts;
 
-      accounts.forEach((account: any) => {
-        this.entryService.add({
+      if (this.isUpdateMode) {
+        // Update existing entries
+        const updatedEntries = accounts.map((account: any) => ({
+          id: this.data.entry.entries.find((e) => e.accountId === account.id)
+            ?.id,
           date: date,
-          accountId: account.id!,
+          accountId: account.id,
           balance: account.balance
-        });
-      });
+        }));
+
+        for (const entry of updatedEntries) {
+          if (entry.id) {
+            await this.entryService.update(entry.id, entry);
+          } else {
+            // Handle case where entry ID is not found
+            console.warn("Entry ID not found for account:", entry.accountId);
+          }
+        }
+      } else {
+        // Add new entries
+        for (const account of accounts) {
+          await this.entryService.add({
+            date: date,
+            accountId: account.id,
+            balance: account.balance
+          });
+        }
+      }
 
       // Only close dialog after all operations complete successfully
       this.dialogRef.close(true);

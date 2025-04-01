@@ -141,6 +141,14 @@
               <button
                 mat-raised-button
                 color="warn"
+                (click)="confirmEntriesDeletion()"
+              >
+                <mat-icon>delete_forever</mat-icon>
+                Delete All Entries
+              </button>
+              <button
+                mat-raised-button
+                color="warn"
                 (click)="confirmDatabaseDeletion()"
               >
                 <mat-icon>delete_forever</mat-icon>

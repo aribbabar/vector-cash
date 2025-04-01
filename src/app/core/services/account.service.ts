@@ -93,7 +93,7 @@ export class AccountService {
       );
       if (!category || !category.isActive) {
         throw new Error(
-          `Cannot activate account. Category: ${existingAccount.name} is not active.`
+          `Cannot activate account. Category: ${category?.name} is not active.`
         );
       }
     }

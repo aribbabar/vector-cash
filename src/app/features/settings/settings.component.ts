@@ -133,14 +133,13 @@ export class SettingsComponent {
       accountCategories: this.accountCategories
     };
 
+    const date = Intl.DateTimeFormat("en-US").format(new Date());
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const url = window.URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `vector-cash-backup-${new Date()
-      .toISOString()
-      .slice(0, 10)}.json`;
+    a.download = `vector-cash-backup-${date}.json`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -162,7 +161,6 @@ export class SettingsComponent {
       const reader = new FileReader();
 
       reader.onload = () => {
-        console.log(JSON.parse(reader.result as string));
         try {
           const importedData: ImportExportData = JSON.parse(
             reader.result as string
@@ -204,6 +202,23 @@ export class SettingsComponent {
 
       reader.readAsText(file);
     }
+  }
+
+  confirmEntriesDeletion(): void {
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      data: {
+        title: "Delete Entries",
+        message: `Are you sure you want to delete all entries?`,
+        confirmText: "Delete",
+        cancelText: "Cancel"
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.entryService.removeAll();
+      }
+    });
   }
 
   confirmDatabaseDeletion(): void {

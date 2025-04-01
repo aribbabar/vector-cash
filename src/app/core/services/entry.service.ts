@@ -198,4 +198,9 @@ export class EntryService {
     await this.databaseService.entries.where("date").equals(date).delete();
     await this.loadEntries();
   }
+
+  async removeAll() {
+    await this.databaseService.entries.clear();
+    await this.loadEntries();
+  }
 }
