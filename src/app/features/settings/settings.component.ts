@@ -15,6 +15,7 @@ import { AccountCategoryService } from "../../core/services/account-category.ser
 import { AccountService } from "../../core/services/account.service";
 import { DatabaseService } from "../../core/services/database.service";
 import { EntryService } from "../../core/services/entry.service";
+import { ImportExportService } from "../../core/services/import-export.service";
 import { Theme, ThemeService } from "../../core/services/theme.service";
 import { DeleteDialogComponent } from "../delete-dialog/delete-dialog.component";
 
@@ -57,6 +58,7 @@ export class SettingsComponent {
     private entryService: EntryService,
     private accountService: AccountService,
     private accountCategoryService: AccountCategoryService,
+    private importExportService: ImportExportService,
     private themeService: ThemeService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
@@ -126,24 +128,8 @@ export class SettingsComponent {
     }
   }
 
-  exportData(): void {
-    const data: ImportExportData = {
-      entries: this.entries,
-      accounts: this.accounts,
-      accountCategories: this.accountCategories
-    };
-
-    const date = Intl.DateTimeFormat("en-US").format(new Date());
-    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vector-cash-backup-${date}.json`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+  async exportData() {
+    await this.importExportService.exportData();
 
     this.snackBar.open("Data exported successfully", "Close", {
       duration: 3000
@@ -154,53 +140,22 @@ export class SettingsComponent {
     this.fileInput.nativeElement.click();
   }
 
-  importData(event: Event): void {
+  async importData(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      const reader = new FileReader();
 
-      reader.onload = () => {
-        try {
-          const importedData: ImportExportData = JSON.parse(
-            reader.result as string
-          );
+    try {
+      if (input.files && input.files.length > 0) {
+        await this.importExportService.importData(input.files[0]);
+      }
 
-          if (
-            this.entries.length > 0 ||
-            this.accounts.length > 0 ||
-            this.accountCategories.length > 0
-          ) {
-            throw new Error(
-              "Data already exists. Please delete existing data before importing."
-            );
-          }
-
-          for (const entry of importedData.entries) {
-            this.entryService.add(entry);
-          }
-
-          for (const account of importedData.accounts) {
-            this.accountService.add(account);
-          }
-
-          for (const accountCategory of importedData.accountCategories) {
-            this.accountCategoryService.add(accountCategory);
-          }
-
-          this.snackBar.open("Data imported successfully", "Close", {
-            duration: 3000
-          });
-        } catch (error) {
-          input.value = "";
-          console.error("Error parsing imported data:", error);
-          this.snackBar.open((error as Error).message, "Close", {
-            duration: 3000
-          });
-        }
-      };
-
-      reader.readAsText(file);
+      this.snackBar.open("Data imported successfully", "Close", {
+        duration: 3000
+      });
+    } catch (error: any) {
+      input.value = "";
+      this.snackBar.open((error as Error).message, "Close", {
+        duration: 3000
+      });
     }
   }
 

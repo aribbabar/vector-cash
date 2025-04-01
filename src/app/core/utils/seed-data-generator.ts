@@ -127,28 +127,34 @@ export class SeedDataGenerator {
           case 1: // Checking
             baseBalance =
               2500 + monthsFromStart * 50 + (Math.random() * 1000 - 500); // Fluctuating with slight uptrend
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 2: // Savings
             baseBalance = 10000 + monthsFromStart * 150; // Steady growth
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 3: // Investment
             baseBalance =
               25000 + monthsFromStart * 400 + (Math.random() * 2000 - 1000); // Higher growth with volatility
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 4: // Retirement
             baseBalance = 50000 + monthsFromStart * 500; // Steady higher growth
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 5: // Cash
             baseBalance = 100 + (Math.random() * 200 - 100); // Small fluctuating
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 6: // Credit Cards (Liability)
-            baseBalance = 1000 + Math.random() * 1500; // Negative balances, fluctuating
+            baseBalance = 1000 + Math.random() * 1500; // Balances for liabilities
             break;
           case 7: // Loans (Liability)
-            baseBalance = 200000 - monthsFromStart * 800; // Decreasing negative balance
+            baseBalance = 200000 - monthsFromStart * 800; // Decreasing balance for liabilities
             break;
           default:
             baseBalance = 1000 + Math.random() * 500; // Default case
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
         }
 
@@ -257,22 +263,26 @@ export class SeedDataGenerator {
           case 1: // Checking
             baseBalance =
               2500 + monthsFromStart * 50 + (Math.random() * 1000 - 500); // Fluctuating with slight uptrend
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 2: // Savings
             baseBalance = 10000 + monthsFromStart * 150; // Steady growth
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 3: // Investment
             baseBalance =
               25000 + monthsFromStart * 400 + (Math.random() * 2000 - 1000); // Higher growth with volatility
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
           case 4: // Credit Cards (Liability)
-            baseBalance = 1000 - Math.random() * 1500; // Negative balances, fluctuating
+            baseBalance = 1000 + Math.random() * 1500; // Balances for liabilities
             break;
           case 5: // Loans (Liability)
-            baseBalance = 200000 + monthsFromStart * 800; // Decreasing negative balance
+            baseBalance = 20000 - monthsFromStart * 800; // Decreasing balance for liabilities
             break;
           default:
             baseBalance = 1000 + Math.random() * 500; // Default case
+            baseBalance = Math.max(baseBalance, 0); // Ensure not negative
             break;
         }
 
