@@ -135,11 +135,19 @@ export class EntryDialogComponent implements OnInit {
 
       // Sort active accounts by category type
       const sortedAccounts = [...this.activeAccounts].sort(sortByCategoryType);
+      const latestEntry = await this.entryService.getMostRecentGroupedEntry();
 
       sortedAccounts.forEach((account) => {
         const accountCategory = categoryMap.get(account.categoryId)!;
+        const latestEntryBalance =
+          latestEntry?.entries.find((entry) => entry.accountId === account.id)
+            ?.balance ?? undefined;
         accountControls.push(
-          this.createAccountFormGroup(account, accountCategory)
+          this.createAccountFormGroup(
+            account,
+            accountCategory,
+            latestEntryBalance
+          )
         );
       });
     }
